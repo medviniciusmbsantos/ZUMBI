@@ -1,5 +1,7 @@
 # ZUMBI — Último Voo
 
+**Para baixar sem abrir o XML no navegador:** [baixar somente o jogo em ZIP](https://raw.githubusercontent.com/medviniciusmbsantos/ZUMBI/refs/heads/main/releases/ZUMBI-ABRIR-NO-STUDIO.zip). Extraia e abra `ZUMBI-Ultimo-Voo.rbxlx` no Roblox Studio.
+
 **Downloads:** [jogo para Roblox Studio (.rbxlx)](https://github.com/medviniciusmbsantos/ZUMBI/raw/refs/heads/main/releases/ZUMBI-Ultimo-Voo.rbxlx) · [projeto completo (.zip)](https://github.com/medviniciusmbsantos/ZUMBI/raw/refs/heads/main/releases/ZUMBI-Projeto.zip).
 
 Abra o `.rbxlx` no Roblox Studio em **File → Open from File** e pressione **Play (F5)**. O mapa é criado durante a execução.

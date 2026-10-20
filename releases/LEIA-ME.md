@@ -1,5 +1,7 @@
 # Arquivos para baixar
 
+**Download recomendado:** [ZUMBI-ABRIR-NO-STUDIO.zip](https://raw.githubusercontent.com/medviniciusmbsantos/ZUMBI/refs/heads/main/releases/ZUMBI-ABRIR-NO-STUDIO.zip). Esse ZIP contém somente `ZUMBI-Ultimo-Voo.rbxlx`, na raiz. Extraia o ZIP e abra o arquivo no Studio. O ZIP é servido como `application/zip`; o `.rbxlx` avulso pode abrir como texto no navegador.
+
 - `ZUMBI-Ultimo-Voo.rbxlx`: lugar Roblox, pronto para abrir no Studio e testar.
 - `ZUMBI-Projeto.zip`: código-fonte, documentação, gerador do lugar e arquivos de jogo/teste.
 
