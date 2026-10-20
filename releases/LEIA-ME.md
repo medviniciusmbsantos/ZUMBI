@@ -1,20 +1,9 @@
-# Arquivos para baixar
+# Distribuição suspensa
 
-**Download recomendado:** [ZUMBI-ABRIR-NO-STUDIO.zip](https://raw.githubusercontent.com/medviniciusmbsantos/ZUMBI/refs/heads/main/releases/ZUMBI-ABRIR-NO-STUDIO.zip). Esse ZIP contém somente `ZUMBI-Ultimo-Voo.rbxlx`, na raiz. Extraia o ZIP e abra o arquivo no Studio. O ZIP é servido como `application/zip`; o `.rbxlx` avulso pode abrir como texto no navegador.
+O Windows Defender foi reportado detectando `Trojan:Script/Ulthar.A!ml` em `ZUMBI-ABRIR-NO-STUDIO.zip`.
 
-- `ZUMBI-Ultimo-Voo.rbxlx`: lugar Roblox, pronto para abrir no Studio e testar.
-- `ZUMBI-Projeto.zip`: código-fonte, documentação, gerador do lugar e arquivos de jogo/teste.
+Os três arquivos de distribuição foram retirados desta versão enquanto o alerta é investigado. Não abra, restaure da quarentena ou adicione exceções para cópias baixadas anteriormente.
 
-No GitHub, abra o arquivo desejado e use **Download raw file** (botão de download). Você também pode usar os links de download no README da raiz.
+O código-fonte permanece para inspeção. Versões antigas no histórico Git e caches podem continuar contendo os arquivos retirados; a existência de uma cópia não significa que ela foi liberada para uso.
 
-No Roblox Studio: **File → Open from File → ZUMBI-Ultimo-Voo.rbxlx**, depois **Play (F5)**. No modo de edição, o lugar contém os scripts; o mapa aparece ao iniciar o teste.
-
-Esta é uma implementação inicial. Ela ainda precisa de playtest no motor Roblox antes do lançamento. As ofertas com Robux estão desativadas até configurar os IDs em `src/shared/Config.luau` e gerar/publicar uma nova versão.
-
-Para reconstruir o arquivo a partir do código-fonte:
-
-```sh
-python3 tools/build_place.py
-```
-
-O novo arquivo será gerado em `build/ZUMBI-Ultimo-Voo.rbxlx`.
+Consulte [o registro da investigação](../docs/SEGURANCA.md). Nenhuma versão substituta foi validada por antivírus ou liberada após o alerta.

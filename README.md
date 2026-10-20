@@ -1,10 +1,6 @@
 # ZUMBI — Último Voo
 
-**Para baixar sem abrir o XML no navegador:** [baixar somente o jogo em ZIP](https://raw.githubusercontent.com/medviniciusmbsantos/ZUMBI/refs/heads/main/releases/ZUMBI-ABRIR-NO-STUDIO.zip). Extraia e abra `ZUMBI-Ultimo-Voo.rbxlx` no Roblox Studio.
-
-**Downloads:** [jogo para Roblox Studio (.rbxlx)](https://github.com/medviniciusmbsantos/ZUMBI/raw/refs/heads/main/releases/ZUMBI-Ultimo-Voo.rbxlx) · [projeto completo (.zip)](https://github.com/medviniciusmbsantos/ZUMBI/raw/refs/heads/main/releases/ZUMBI-Projeto.zip).
-
-Abra o `.rbxlx` no Roblox Studio em **File → Open from File** e pressione **Play (F5)**. O mapa é criado durante a execução.
+> **Downloads suspensos — análise de segurança pendente.** Foi relatada uma detecção do Windows Defender, `Trojan:Script/Ulthar.A!ml`, no pacote `ZUMBI-ABRIR-NO-STUDIO.zip`. Os arquivos de distribuição foram retirados da versão atual. Não restaure o arquivo da quarentena nem desative a proteção. A causa ainda não foi determinada; não há confirmação de falso positivo. Consulte [o registro da investigação](docs/SEGURANCA.md). As instruções de execução abaixo documentam o projeto e não constituem liberação de segurança.
 
 Jogo de sobrevivência cooperativa para Roblox, solo ou com até 6 jogadores. Um avião cai na cidade de Aurora; a equipe explora os prédios, restaura a energia, enfrenta 15 hordas e tenta embarcar no último resgate.
 
