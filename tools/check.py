@@ -21,6 +21,7 @@ def data_harness() -> str:
     preamble = r'''
 local Balance = require("../src/shared/Balance")
 local Config = require("../src/shared/Config")
+local Profile = require("../src/shared/Profile")
 local count = 0
 local function check(value, message) count += 1; assert(value, message) end
 local function copy(t)
@@ -46,7 +47,7 @@ local services = {
     RunService = { IsStudio = function() return studio end },
     HttpService = { GenerateGUID = function() return "TEST_SESSION" end },
 }
-local fakeGame = { JobId = "TEST", ReplicatedStorage = { ZumbiShared = { Balance = "Balance", Config = "Config" } } }
+local fakeGame = { JobId = "TEST", ReplicatedStorage = { ZumbiShared = { Balance = "Balance", Config = "Config", Profile = "Profile" } } }
 function fakeGame:GetService(name) return assert(services[name], name) end
 function fakeGame:BindToClose() end
 local nodeMethods = {}
@@ -70,7 +71,7 @@ local function player(id)
 end
 local tasks = { wait = function() end, spawn = function() end }
 local function moduleRequire(name)
-    if name == "Balance" then return Balance elseif name == "Config" then return Config end
+    if name == "Balance" then return Balance elseif name == "Config" then return Config elseif name == "Profile" then return Profile end
     error("Unknown module " .. tostring(name))
 end
 local function loadData(game, require, task, Instance, warn)
@@ -90,6 +91,11 @@ check(p.leaderstats.Abates.Value == 2, "Leaderboard tracks kills")
 check(Data.spend(p, 201) == false, "Cannot overspend")
 check(Data.spend(p, -50) == false, "Negative spending rejected")
 check(Data.spend(p, 30) == true and p:GetAttribute("Coins") == 170, "Atomic spend")
+check(Data.spend(p, 0 / 0) == false and p:GetAttribute("Coins") == 170, "NaN spending is rejected without mutation")
+check(Data.award(p, math.huge, 1) == false and p.leaderstats.Abates.Value == 2, "Invalid award cannot partly grant kills")
+check(Data.receipt(p, {}, { Grant = "Coins", Amount = 1 }) == false, "Malformed receipt ID rejected")
+check(Data.receipt(p, "invalid-product", { Grant = "Other", Amount = 10 }) == false, "Unknown entitlement rejected")
+check(Data.receipt(p, "negative-product", { Grant = "Coins", Amount = -10 }) == false, "Negative entitlement rejected")
 check(Data.cosmetic(p, "does-not-exist") == nil, "Reject unknown cosmetic")
 Data.award(p, 1000)
 check(Data.cosmetic(p, "Ember") == true, "Buy cosmetic")
@@ -142,6 +148,10 @@ check(rejoined:GetAttribute("Coins") == finalCoins, "Historical receipt not gran
 store.values.u_20 = { Session = { Id = "OTHER_SERVER", Until = os.time() + 150 } }
 local locked = player(20); Data.load(locked)
 check(locked.kicked ~= nil and not locked:GetAttribute("DataReady"), "Active session lock protects profile")
+store.values.u_21 = { Coins = "bad", Session = { Id = "OTHER_SERVER" } }
+local damaged = player(21); Data.load(damaged)
+check(damaged:GetAttribute("DataReady") and not damaged.kicked, "Malformed lease no longer breaks profile loading")
+check(damaged:GetAttribute("Coins") == Balance.StartingCoins, "Malformed stored balance repaired")
 
 store.fail = true
 local offline = player(30); Data.load(offline)
@@ -170,6 +180,7 @@ if __name__ == "__main__":
         print("UNRUN Luau compilation: supply --compiler /path/to/luau-compile", flush=True)
     if args.luau:
         run([args.luau, "tests/balance.test.luau"])
+        run([args.luau, "tests/profile.test.luau"])
         harness = ROOT / "build" / "data.test.luau"
         harness.parent.mkdir(exist_ok=True)
         harness.write_text(data_harness())

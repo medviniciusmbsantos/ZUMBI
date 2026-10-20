@@ -10,13 +10,15 @@ O projeto foi escrito do zero. O mapa usa a ideia de sobrevivência urbana por h
 
 ## Abrir e jogar no Studio
 
-O arquivo entregue está em `build/ZUMBI-Ultimo-Voo.rbxlx`. Para reconstruí-lo, use Python 3.10+ na raiz do repositório:
+Após a revisão, o gerador produz uma **candidata local para inspeção**, em `build/review/ZUMBI-Candidata.rbxlx`, acompanhada de um manifesto com os hashes de cada script. O alerta do Defender ainda não foi esclarecido. Os comandos abaixo são destinados à revisão do projeto; não representam liberação para uso do arquivo bloqueado. Use Python 3.10+ na raiz do repositório:
 
 ```sh
 python3 tools/build_place.py
+# Opcional: pacote local de revisão, com o lugar, manifesto e aviso de pendências
+python3 tools/package_candidate.py
 ```
 
-1. No **Roblox Studio**, use **File → Open from File** e abra esse `.rbxlx`.
+1. Depois da validação de segurança pendente, no **Roblox Studio**, use **File → Open from File** e abra esse `.rbxlx`.
 2. Pressione **Play (F5)**. O mapa aparece durante a execução; no modo de edição, o lugar contém os scripts que o constroem.
 3. Aguarde o carregamento. A primeira preparação dura 40 segundos. Feche o guia, equipe a pistola e explore. Não são necessários modelos, plugins, chaves de API ou bibliotecas de terceiros para jogar o protótipo.
 4. Sem acesso a DataStore no Studio, a partida usa progresso temporário e desativa compras. Isso não impede a partida local. Para testar persistência, publique uma experiência **de testes** separada e habilite o acesso do Studio às APIs nas configurações de segurança.
@@ -77,7 +79,7 @@ python3 tools/check.py
 # Com as ferramentas oficiais Luau disponíveis:
 python3 tools/check.py --luau /caminho/luau --compiler /caminho/luau-compile
 # Lugar separado com smoke test para executar no Roblox Studio:
-python3 tools/build_place.py --smoke-test --output build/ZUMBI-Teste-Studio.rbxlx
+python3 tools/build_place.py --smoke-test --output build/review/ZUMBI-Teste-Studio.rbxlx
 ```
 
 Sem os executáveis Luau, o comando informa explicitamente que compilação e testes Luau não foram executados. O smoke test do Studio usa um namespace de DataStore separado e deve ser aberto com F5; **não publique o arquivo de teste**. Os testes locais não substituem a execução no Studio.
@@ -85,6 +87,7 @@ Sem os executáveis Luau, o comando informa explicitamente que compilação e te
 ```text
 src/shared/Balance.luau       Regras, preços, armas e escalonamento
 src/shared/Config.luau        IDs de Developer Products/passe e namespace de dados
+src/shared/Profile.luau       Normalização dos dados e regras de créditos/recibos
 src/server/World.luau         Construção do mapa e interações locais
 src/server/GameService.luau   Hordas, progressão da partida, buffs e extração
 src/server/ZombieService.luau Rigs, navegação, combate e contabilização dos inimigos
@@ -92,7 +95,9 @@ src/server/CombatService.luau Armas, raycasts, cadência, munição e aprimorame
 src/server/DataService.luau   Perfis, sessões, salvamento e recibos idempotentes
 src/server/CommerceService.luau Catálogo, passe e entrega de produtos
 src/client/main.client.luau   HUD, menus, input, espectador e efeitos locais
-tools/build_place.py         Empacotamento do lugar XML, sem dependências Python
+tools/build_place.py         Geração local de candidata e manifesto de integridade
+tools/place_format.py        Serialização estrita e verificação contra os fontes
+tools/package_candidate.py   ZIP local de revisão, sem envio automático
 ```
 
 Para ajustar posições e interiores, altere `World.luau`. Para ajustar dificuldade, preços e armas, altere `Balance.luau`. Não crie outro worktree: trabalhe no checkout existente, já isolado pelo ambiente de nuvem.

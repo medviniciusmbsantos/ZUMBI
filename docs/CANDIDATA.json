@@ -1,0 +1,85 @@
+{
+  "format_version": 1,
+  "place_sha256": "c67aae54b34a5ff53dca7c15526fa283e5a5f7071e0fe5e8425f781da1c29efb",
+  "bytes": 113365,
+  "checks": {
+    "xml_and_exact_source_match": "passed",
+    "antivirus": "not_run",
+    "roblox_engine": "not_run"
+  },
+  "security_status": "Defender detection on original package remains unresolved",
+  "sources": [
+    {
+      "instance": "ReplicatedStorage/ZumbiShared/Balance",
+      "file": "src/shared/Balance.luau",
+      "class": "ModuleScript",
+      "sha256": "23d15665c36e2bb180348a0a0dca12d9e7bb8606916b7f17a029cd6b733e23c6"
+    },
+    {
+      "instance": "ReplicatedStorage/ZumbiShared/Config",
+      "file": "src/shared/Config.luau",
+      "class": "ModuleScript",
+      "sha256": "92a37210a6514a0a972235e403d34a9bbfec35a82bbc8afbb5078c35fba3dfdf"
+    },
+    {
+      "instance": "ReplicatedStorage/ZumbiShared/Profile",
+      "file": "src/shared/Profile.luau",
+      "class": "ModuleScript",
+      "sha256": "8e6edcba951bd3d8c219a16664071f54c8bf5bc5a43f417810644415e7b44346"
+    },
+    {
+      "instance": "ServerScriptService/ZumbiServer/Boot",
+      "file": "src/server/Boot.server.luau",
+      "class": "Script",
+      "sha256": "218537d7812834e64da203fbd819a167e57d0ba317e9d6c6d7ef36c7f39fdece"
+    },
+    {
+      "instance": "ServerScriptService/ZumbiServer/CombatService",
+      "file": "src/server/CombatService.luau",
+      "class": "ModuleScript",
+      "sha256": "4b97d1be1f66817e99b965a399f3494432c316ed6718d5446599ef2e26437758"
+    },
+    {
+      "instance": "ServerScriptService/ZumbiServer/CommerceService",
+      "file": "src/server/CommerceService.luau",
+      "class": "ModuleScript",
+      "sha256": "1aa7e0cbbf3a50f9fdb7ffdda35a198f709d748850095f2f6eb0705e159e8e4f"
+    },
+    {
+      "instance": "ServerScriptService/ZumbiServer/DataService",
+      "file": "src/server/DataService.luau",
+      "class": "ModuleScript",
+      "sha256": "5af780c45214c88dd45e31f5862911c28817d7977c07e078f3e8af1dca8ed709"
+    },
+    {
+      "instance": "ServerScriptService/ZumbiServer/GameService",
+      "file": "src/server/GameService.luau",
+      "class": "ModuleScript",
+      "sha256": "c15931bc4ad558ebd521c4ce2aaa0186a7f54700485a1320ceb13df7698485d3"
+    },
+    {
+      "instance": "ServerScriptService/ZumbiServer/Util",
+      "file": "src/server/Util.luau",
+      "class": "ModuleScript",
+      "sha256": "c5f83b50a0140a67329e1d503aea23a2d8cc35146cdfbeaa849c9c7e74274343"
+    },
+    {
+      "instance": "ServerScriptService/ZumbiServer/World",
+      "file": "src/server/World.luau",
+      "class": "ModuleScript",
+      "sha256": "1efc389ac8e885f2b6db6d85f7931d3312255a49a0a09aee27499a15f9234d52"
+    },
+    {
+      "instance": "ServerScriptService/ZumbiServer/ZombieService",
+      "file": "src/server/ZombieService.luau",
+      "class": "ModuleScript",
+      "sha256": "c987ee12da78758126b7d37431310fabfa7cbda8ec02c157fb04bf910c26be88"
+    },
+    {
+      "instance": "StarterPlayer/StarterPlayerScripts/ZumbiClient",
+      "file": "src/client/main.client.luau",
+      "class": "LocalScript",
+      "sha256": "a40e55f93028dfe49f2fb71530bac9c76d8fef86ddb16f185b577f883bc009c2"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 local Balance = require(game.ReplicatedStorage.ZumbiShared.Balance)
 local Config = require(game.ReplicatedStorage.ZumbiShared.Config)
+local Profile = require(game.ReplicatedStorage.ZumbiShared.Profile)
 
 local Data = { Profiles = {}, Loading = {} }
 local store
@@ -11,29 +12,6 @@ local storeAvailable, storeResult = pcall(function() return DataStoreService:Get
 if storeAvailable then store = storeResult end
 local session = game.JobId .. ":" .. HttpService:GenerateGUID(false)
 local shuttingDown = false
-
-local function defaults()
-	return { Version = 1, Coins = Balance.StartingCoins, BestWave = 0, Wins = 0, Kills = 0,
-		Skin = "Default", Skins = { Default = true }, Revives = 0, BoostUntil = 0, Receipts = {} }
-end
-
-local function copy(value)
-	if type(value) ~= "table" then return value end
-	local result = {}
-	for key, item in value do result[key] = copy(item) end
-	return result
-end
-
-local function hydrate(raw)
-	local result = defaults()
-	if type(raw) ~= "table" then return result end
-	for key, value in result do
-		if type(raw[key]) == type(value) then result[key] = copy(raw[key]) end
-	end
-	result.Skins.Default = true
-	if not Balance.Skins[result.Skin] or not result.Skins[result.Skin] then result.Skin = "Default" end
-	return result
-end
 
 function Data.sync(player)
 	local p = Data.Profiles[player]
@@ -60,8 +38,8 @@ function Data.load(player)
 		ok, err = pcall(function()
 			assert(store, "DataStore unavailable in this place")
 			loaded = store:UpdateAsync("u_" .. player.UserId, function(old)
-				if type(old) == "table" and old.Session and old.Session.Id ~= session and old.Session.Until > os.time() then return nil end
-				local d = hydrate(old)
+				if Profile.lockedByOther(old, session, os.time()) then return nil end
+				local d = Profile.normalize(old)
 				d.Session = { Id = session, Until = os.time() + 150 }
 				return d
 			end)
@@ -86,7 +64,7 @@ function Data.load(player)
 		return
 	end
 	if not ok then warn("[ZUMBI] Studio sem DataStore: progresso temporário; compras desativadas.") end
-	Data.Profiles[player] = { data = hydrate(loaded), persistent = ok, busy = false, closing = false, lastSaved = os.clock() }
+	Data.Profiles[player] = { data = Profile.normalize(loaded), persistent = ok, busy = false, closing = false, lastSaved = os.clock() }
 	local stats = Instance.new("Folder"); stats.Name = "leaderstats"; stats.Parent = player
 	for _, key in { "Abates", "Recorde" } do local v = Instance.new("IntValue"); v.Name = key; v.Parent = stats end
 	Data.sync(player)
@@ -96,22 +74,21 @@ end
 function Data.award(player, coins, kills)
 	local p = Data.Profiles[player]
 	if not p or p.closing then return end
-	p.data.Coins += math.max(0, math.floor(coins or 0))
-	p.data.Kills += math.max(0, math.floor(kills or 0))
+	if not Profile.credit(p.data, coins or 0, kills or 0) then return false end
 	Data.sync(player)
+	return true
 end
 
 function Data.spend(player, amount)
 	local p = Data.Profiles[player]
-	if not p or p.closing or amount < 0 or p.data.Coins < amount then return false end
-	p.data.Coins -= amount
+	if not p or p.closing or not Profile.debit(p.data, amount) then return false end
 	Data.sync(player)
 	return true
 end
 
 function Data.record(player, wave, won)
 	local p = Data.Profiles[player]
-	if not p then return end
+	if not p or p.closing or not Profile.isInteger(wave) then return end
 	p.data.BestWave = math.max(p.data.BestWave, wave)
 	if won then p.data.Wins += 1 end
 	Data.sync(player)
@@ -120,7 +97,7 @@ end
 function Data.cosmetic(player, key)
 	local skin = Balance.Skins[key]
 	local p = Data.Profiles[player]
-	if not p or not skin then return end
+	if not p or p.closing or not skin then return end
 	if not p.data.Skins[key] then
 		if not Data.spend(player, skin.Price) then return false end
 		p.data.Skins[key] = true
@@ -152,7 +129,7 @@ function Data.save(player, release)
 	end
 	lock(p)
 	if release then p.closing = true end
-	local snapshot = copy(p.data)
+	local snapshot = Profile.copy(p.data)
 	snapshot.Session = if release then nil else { Id = session, Until = os.time() + 150 }
 	local saved
 	local ok, err = pcall(function()
@@ -176,27 +153,23 @@ function Data.save(player, release)
 	return false
 end
 
-local function applyProduct(d, product)
-	if product.Grant == "Coins" then d.Coins += product.Amount
-	elseif product.Grant == "Revives" then d.Revives += product.Amount
-	elseif product.Grant == "Boost" then d.BoostUntil = math.max(os.time(), d.BoostUntil) + product.Amount end
-end
-
 -- Acknowledge ONLY after the entitlement and receipt ID are saved atomically.
 function Data.receipt(player, receiptId, product)
+	if type(receiptId) ~= "string" or #receiptId == 0 or #receiptId > 200 then return false end
 	local p = Data.Profiles[player]
 	if not p or not p.persistent or p.closing then return false end
 	lock(p)
 	if p.closing then p.busy = false; return false end
 	if p.data.Receipts[receiptId] then p.busy = false; return true end
-	local snapshot = copy(p.data)
+	local snapshot = Profile.copy(p.data)
+	if not Profile.grant(Profile.copy(snapshot), product, os.time()) then p.busy = false; return false end
 	local saved
 	local ok = pcall(function()
 		saved = store:UpdateAsync("u_" .. player.UserId, function(old)
 			if not old or not old.Session or old.Session.Id ~= session then return nil end
 			if old.Receipts and old.Receipts[receiptId] then return old end
-			local result = copy(snapshot)
-			applyProduct(result, product)
+			local result = Profile.copy(snapshot)
+			if not Profile.grant(result, product, os.time()) then return nil end
 			result.Receipts[receiptId] = true
 			result.Session = { Id = session, Until = os.time() + 150 }
 			return result
@@ -204,7 +177,7 @@ function Data.receipt(player, receiptId, product)
 	end)
 	if ok and saved and saved.Receipts[receiptId] then
 		-- Apply a delta so gameplay earnings made while UpdateAsync yielded survive.
-		applyProduct(p.data, product)
+		if not Profile.grant(p.data, product, os.time()) then p.busy = false; return false end
 		p.data.Receipts[receiptId] = true
 		p.lastSaved = os.clock()
 		Data.sync(player)

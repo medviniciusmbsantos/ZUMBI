@@ -1,14 +1,13 @@
 """Artifact checks; these do not simulate the Roblox engine."""
-import importlib.util
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("build_place", ROOT / "tools/build_place.py")
-builder = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(builder)
+sys.path.insert(0, str(ROOT / "tools"))
+import build_place as builder
 
 
 class PlaceBuildTests(unittest.TestCase):

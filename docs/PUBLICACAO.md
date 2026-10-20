@@ -2,7 +2,7 @@
 
 ## Primeiro teste
 
-1. Gere e abra `build/ZUMBI-Ultimo-Voo.rbxlx` no Roblox Studio.
+1. Primeiro esclareça o alerta de segurança descrito em [SEGURANÇA](SEGURANCA.md). Depois da validação pendente, gere e abra `build/review/ZUMBI-Candidata.rbxlx` no Roblox Studio.
 2. Execute o roteiro em [TESTES](TESTES.md), incluindo jogo em equipe e extração. Corrija qualquer falha encontrada antes do lançamento.
 3. Publique uma cópia em uma experiência **de testes**, mantendo o acesso restrito enquanto valida.
 4. Defina o limite do lugar para **6 jogadores** nas configurações do lugar.

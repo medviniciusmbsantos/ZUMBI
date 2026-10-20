@@ -12,16 +12,17 @@ As ferramentas usadas foram compiladas do repositório oficial `luau-lang/luau`,
 
 - Compilação de todos os módulos e scripts em `src` pelo compilador oficial Luau.
 - **134 verificações** de escalonamento das 15 hordas, chefes, recompensas, cadência, munição, aprimoramento e economia básica.
-- **41 verificações** executando o código real de DataService com serviços Roblox simulados: carga, gastos, cosméticos, reconexão, sessão ocupada, compras, recibos repetidos, falhas de rede, ganho durante salvamento e fallback do Studio.
-- **3 testes Python** de integridade do arquivo XML: hierarquia, presença exata dos fontes, unicidade das referências, geração determinística e separação do lugar de smoke test.
-- Geração do `.rbxlx` normal e do arquivo separado de teste.
+- **33 verificações** das regras puras de perfil: dados inválidos, números não finitos, sessões, débitos, créditos e concessões de produtos.
+- **48 verificações** executando o código real de DataService com serviços Roblox simulados: carga, gastos, cosméticos, reconexão, sessão ocupada, compras, recibos repetidos, falhas de rede, ganho durante salvamento, valores inválidos e fallback do Studio.
+- **23 testes Python** de integridade e rejeição de alterações no XML: hierarquia, fontes exatos, referências, propriedades, links simbólicos, saída atômica, caminhos, geração determinística e separação do smoke test.
+- Geração local da candidata `.rbxlx`, seu manifesto, pacote de revisão e arquivo separado de teste. Nenhum deles foi testado com Windows Defender.
 
 Essas verificações **não executam o motor Roblox**. Não comprovam navegação, colisão, comportamento dos rigs, câmera, prompts, GUI em aparelhos reais, multiplayer, persistência na nuvem Roblox ou entrega de compras na plataforma.
 
 ## Smoke test automático no Studio — ainda não executado
 
 ```sh
-python3 tools/build_place.py --smoke-test --output build/ZUMBI-Teste-Studio.rbxlx
+python3 tools/build_place.py --smoke-test --output build/review/ZUMBI-Teste-Studio.rbxlx
 ```
 
 Abra o arquivo de teste no Roblox Studio, mostre **Output** e pressione **Play (F5)**, sem movimentar o personagem durante a execução inicial. Ele deve terminar com a mensagem `[ZUMBI SMOKE] COMPLETED`, sem `FAIL` nem erros vermelhos. O script verifica montagem do mapa, locais, loot, portas, personagem, arma, consumo de munição, acerto real, bloqueio por parede, rejeição de cadência impossível/NaN, recarga e atribuição de abate.

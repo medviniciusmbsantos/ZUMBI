@@ -31,6 +31,14 @@ Esses resultados estabelecem a composição e a correspondência com o código-f
 
 ## Próximos passos
 
+### Revisão do código solicitada após o alerta
+
+O gerador e o empacotador foram reescritos para aceitar apenas a estrutura suportada do projeto, conferir o texto de cada script contra os fontes, rejeitar propriedades e scripts adicionais, impedir links simbólicos/caminhos fora de `src` e gravar as saídas de forma atômica. Os novos arquivos são candidatos locais de revisão e contêm um manifesto que informa explicitamente que não houve teste antivírus.
+
+A leitura dos perfis também foi reformulada em `src/shared/Profile.luau`: saldos e contadores são normalizados, concessões inválidas não são aplicadas e uma sessão com prazo ausente não causa mais erro de carregamento. Isso corrige problemas concretos de robustez. Não foi identificada ligação entre esses problemas e a detecção do Defender; não se afirma que sejam sua causa.
+
+Passaram 23 testes Python, a compilação dos 12 scripts/módulos Luau e 215 verificações Luau. O jogo, mapa, armas e regras de monetização foram preservados. A versão candidata não foi executada no Roblox nem examinada pelo Defender. Os arquivos de distribuição permanecem suspensos; os fontes revisados e o manifesto de revisão ficam disponíveis para inspeção.
+
 Mantenha a quarentena e a proteção do Windows ativas. Não é necessário restaurar o arquivo para informar o nome da detecção, a versão das definições do Defender ou os detalhes do Histórico de proteção. Não compartilhe caminhos com dados pessoais.
 
 A classificação precisa de análise adicional, preferencialmente pelo Microsoft Security Intelligence, por meio do portal oficial de submissão de arquivos: https://www.microsoft.com/en-us/wdsi/filesubmission . Nenhuma amostra foi enviada a terceiros a partir deste ambiente. O acesso ao portal e à documentação da Microsoft não pôde ser concluído pela rede deste ambiente.
