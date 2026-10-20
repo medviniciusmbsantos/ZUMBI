@@ -1,0 +1,2227 @@
+<?xml version='1.0' encoding='utf-8'?>
+<roblox version="4">
+  <External>null</External>
+  <External>nil</External>
+  <Item class="Workspace" referent="RBX1">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <float name="Gravity">196.2</float>
+      <float name="FallenPartsDestroyHeight">-70</float>
+      <bool name="StreamingEnabled">false</bool>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedStorage" referent="RBX2">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="RBX3">
+      <Properties>
+        <string name="Name">ZumbiShared</string>
+      </Properties>
+      <Item class="ModuleScript" referent="RBX4">
+        <Properties>
+          <string name="Name">Balance</string>
+          <ProtectedString name="Source">--!strict
+-- Pure rules: no Roblox globals. Keep all damage/economy decisions on the server.
+local Balance = {}
+
+Balance.MaxPlayers = 6
+Balance.FinalWave = 15
+Balance.InitialPrep = 40
+Balance.BetweenWaves = 18
+Balance.ExtractionTime = 45
+Balance.MaxLivingZombies = 36
+Balance.StartingCoins = 120
+Balance.KillCoins = 12
+Balance.AssistCoins = 5
+Balance.WaveCoins = 35
+Balance.ExtractionCoins = 300
+Balance.UpgradeCost = 280
+Balance.MysteryCost = 0 -- Free random supplies only; never sell random rewards.
+Balance.BaseSpeed = 16
+Balance.SprintSpeed = 23
+
+Balance.Weapons = {
+	Pistol = { Name = "Sentinela .45", Price = 0, Damage = 26, Magazine = 12, Reserve = 108, Interval = 0.24, Reload = 1.55, Pellets = 1, Spread = 0.008, Range = 320, Automatic = false, Color = { 185, 194, 207 } },
+	SMG = { Name = "Vespa SMG", Price = 220, Damage = 19, Magazine = 30, Reserve = 210, Interval = 0.085, Reload = 1.9, Pellets = 1, Spread = 0.025, Range = 250, Automatic = true, Color = { 90, 210, 185 } },
+	Shotgun = { Name = "Escopeta Ruptura", Price = 360, Damage = 16, Magazine = 6, Reserve = 54, Interval = 0.8, Reload = 2.5, Pellets = 8, Spread = 0.085, Range = 140, Automatic = false, Color = { 220, 155, 75 } },
+	Rifle = { Name = "AR Aurora", Price = 480, Damage = 38, Magazine = 24, Reserve = 168, Interval = 0.14, Reload = 2.2, Pellets = 1, Spread = 0.012, Range = 450, Automatic = true, Color = { 230, 100, 95 } },
+}
+
+Balance.Skins = {
+	Default = { Name = "Aço", Price = 0, Color = { 185, 194, 207 } },
+	Ember = { Name = "Brasa", Price = 400, Color = { 255, 112, 45 } },
+	Arctic = { Name = "Ártico", Price = 650, Color = { 110, 225, 255 } },
+	Toxic = { Name = "Contágio", Price = 900, Color = { 165, 255, 75 } },
+	Violet = { Name = "Anomalia", Price = 1200, Color = { 193, 125, 255 } },
+}
+
+Balance.Perks = {
+	Juggernaut = { Name = "Titã", Price = 320, Description = "+75 de vida máxima nesta partida" },
+	QuickHands = { Name = "Mãos rápidas", Price = 240, Description = "Recarga 35% mais rápida nesta partida" },
+	Runner = { Name = "Corredor", Price = 200, Description = "+3 de velocidade nesta partida" },
+}
+
+function Balance.wave(wave: number, players: number)
+	wave = math.max(1, math.floor(wave))
+	players = math.clamp(math.floor(players), 1, Balance.MaxPlayers)
+	return {
+		Count = 5 + wave * 3 + (players - 1) * 4,
+		Health = math.floor(75 * (1 + (wave - 1) * 0.17)),
+		Damage = math.min(34, 9 + wave),
+		Speed = math.min(18, 9 + wave * 0.45),
+		SpawnInterval = math.max(0.38, 1.35 - wave * 0.055),
+		Boss = wave % 5 == 0,
+	}
+end
+
+function Balance.killReward(wave: number, boosted: boolean): number
+	return (Balance.KillCoins + math.floor(wave / 3)) * (if boosted then 2 else 1)
+end
+
+function Balance.upgradeDamage(base: number, tier: number): number
+	return base * (1 + math.clamp(tier, 0, 3) * 0.45)
+end
+
+function Balance.refillCost(price: number): number
+	return math.max(35, math.floor(price * 0.22))
+end
+
+return Balance
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX5">
+        <Properties>
+          <string name="Name">Config</string>
+          <ProtectedString name="Source">-- Replace zeros only after publishing and creating products in Creator Dashboard.
+-- IDs are public configuration, never credentials. Do NOT put API keys here.
+return {
+	DataStoreName = "ZumbiUltimoVoo_v1",
+	Products = {
+		{ Key = "CoinsSmall", Id = 0, Name = "500 suprimentos", Description = "Crédito permanente de 500 moedas", Grant = "Coins", Amount = 500 },
+		{ Key = "CoinsLarge", Id = 0, Name = "1.800 suprimentos", Description = "Crédito permanente de 1.800 moedas", Grant = "Coins", Amount = 1800 },
+		{ Key = "Revive", Id = 0, Name = "Resgate pessoal", Description = "+1 resgate; use quando eliminado durante uma horda", Grant = "Revives", Amount = 1 },
+		{ Key = "DoubleCoins", Id = 0, Name = "Suprimentos em dobro", Description = "2× moedas de abates por 15 minutos de relógio", Grant = "Boost", Amount = 900 },
+	},
+	VanguardPassId = 0, -- +25 base health and +2 movement speed; all maps/weapons remain accessible.
+	VanguardName = "Passe Vanguarda",
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX6">
+        <Properties>
+          <string name="Name">Profile</string>
+          <ProtectedString name="Source">--!strict
+-- Pure profile rules. This module performs no I/O and never runs imported code.
+local Balance = require(script and script.Parent.Balance or "./Balance")
+local Profile = {}
+local MAX_INTEGER = 9007199254740991
+
+function Profile.isInteger(value: any): boolean
+	return type(value) == "number" and value == value and value &gt;= 0
+		and value &lt;= MAX_INTEGER and value % 1 == 0
+end
+
+local function integer(value: any, fallback: number): number
+	if type(value) ~= "number" or value ~= value or math.abs(value) == math.huge then return fallback end
+	return math.clamp(math.floor(value), 0, MAX_INTEGER)
+end
+
+function Profile.copy(value: any): any
+	if type(value) ~= "table" then return value end
+	local result = {}
+	for key, item in value do result[key] = Profile.copy(item) end
+	return result
+end
+
+function Profile.normalize(raw: any): any
+	local source = if type(raw) == "table" then raw else {}
+	local result = {
+		Version = 1,
+		Coins = integer(source.Coins, Balance.StartingCoins),
+		BestWave = integer(source.BestWave, 0),
+		Wins = integer(source.Wins, 0),
+		Kills = integer(source.Kills, 0),
+		Skin = "Default",
+		Skins = { Default = true },
+		Revives = integer(source.Revives, 0),
+		BoostUntil = integer(source.BoostUntil, 0),
+		Receipts = {},
+	}
+	if type(source.Skins) == "table" then
+		for key, owned in source.Skins do
+			if type(key) == "string" and Balance.Skins[key] and owned == true then result.Skins[key] = true end
+		end
+	end
+	if type(source.Skin) == "string" and result.Skins[source.Skin] then result.Skin = source.Skin end
+	if type(source.Receipts) == "table" then
+		for key, delivered in source.Receipts do
+			if type(key) == "string" and #key &gt; 0 and #key &lt;= 200 and delivered == true then result.Receipts[key] = true end
+		end
+	end
+	return result
+end
+
+function Profile.lockedByOther(raw: any, session: string, now: number): boolean
+	if type(raw) ~= "table" or type(raw.Session) ~= "table" then return false end
+	local lease = raw.Session
+	return type(lease.Id) == "string" and lease.Id ~= session
+		and Profile.isInteger(lease.Until) and lease.Until &gt; now
+end
+
+function Profile.credit(data: any, coins: any, kills: any): boolean
+	if not Profile.isInteger(coins) or not Profile.isInteger(kills) then return false end
+	local nextCoins, nextKills = data.Coins + coins, data.Kills + kills
+	if not Profile.isInteger(nextCoins) or not Profile.isInteger(nextKills) then return false end
+	data.Coins, data.Kills = nextCoins, nextKills
+	return true
+end
+
+function Profile.debit(data: any, amount: any): boolean
+	if not Profile.isInteger(amount) or data.Coins &lt; amount then return false end
+	data.Coins -= amount
+	return true
+end
+
+function Profile.grant(data: any, product: any, now: number): boolean
+	if type(product) ~= "table" or not Profile.isInteger(product.Amount) or product.Amount == 0 then return false end
+	local field, value
+	if product.Grant == "Coins" then field, value = "Coins", data.Coins + product.Amount
+	elseif product.Grant == "Revives" then field, value = "Revives", data.Revives + product.Amount
+	elseif product.Grant == "Boost" then field, value = "BoostUntil", math.max(now, data.BoostUntil) + product.Amount
+	else return false end
+	if not Profile.isInteger(value) then return false end
+	data[field] = value
+	return true
+end
+
+return Profile
+</ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="RBX7">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Folder" referent="RBX8">
+      <Properties>
+        <string name="Name">ZumbiServer</string>
+      </Properties>
+      <Item class="Script" referent="RBX9">
+        <Properties>
+          <string name="Name">Boot</string>
+          <ProtectedString name="Source">local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+Players.CharacterAutoLoads = false
+
+local Util = require(script.Parent.Util)
+local network = Util.folder(ReplicatedStorage, "ZumbiNetwork")
+local remotes = {}
+for _, name in { "Fire", "Reload", "Action", "Effects" } do
+	local remote = Instance.new("RemoteEvent")
+	remote.Name, remote.Parent = name, network
+	remotes[name] = remote
+end
+local state = Util.folder(ReplicatedStorage, "ZumbiState")
+require(script.Parent.GameService).start(remotes, state)
+</ProtectedString>
+          <bool name="Disabled">false</bool>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX10">
+        <Properties>
+          <string name="Name">CombatService</string>
+          <ProtectedString name="Source">local Players = game:GetService("Players")
+local Balance = require(game.ReplicatedStorage.ZumbiShared.Balance)
+local Util = require(script.Parent.Util)
+local Zombies = require(script.Parent.ZombieService)
+
+local Combat = { Inventory = {}, Effects = nil }
+local rng = Random.new()
+
+local function sync(record)
+	if not record.tool.Parent then return end
+	record.tool:SetAttribute("Ammo", record.ammo)
+	record.tool:SetAttribute("Reserve", record.reserve)
+	record.tool:SetAttribute("Tier", record.tier)
+	record.tool:SetAttribute("Reloading", record.reloading)
+end
+
+local function equipped(player)
+	local list = Combat.Inventory[player]
+	local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+	return tool and list and list[tool:GetAttribute("WeaponId")]
+end
+
+function Combat.recolor(player)
+	local skin = Balance.Skins[player:GetAttribute("Skin") or "Default"] or Balance.Skins.Default
+	for _, record in Combat.Inventory[player] or {} do
+		local panel = record.tool:FindFirstChild("Acabamento")
+		if panel then panel.Color = Color3.fromRGB(table.unpack(skin.Color)) end
+	end
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+	local trail = root:FindFirstChild("ZumbiTrail")
+	if player:GetAttribute("Skin") == "Default" then
+		if trail then trail.Enabled = false end
+		return
+	end
+	if not trail then
+		local a, b = Instance.new("Attachment"), Instance.new("Attachment")
+		a.Name, b.Name, a.Position, b.Position = "TrailTop", "TrailBottom", Vector3.new(0, 0.4, 0.6), Vector3.new(0, -0.7, 0.6)
+		a.Parent, b.Parent = root, root
+		trail = Instance.new("Trail")
+		trail.Name, trail.Attachment0, trail.Attachment1 = "ZumbiTrail", a, b
+		trail.Lifetime, trail.MinLength, trail.LightEmission = 0.22, 0.2, 0.45
+		trail.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
+		trail.Parent = root
+	end
+	trail.Color, trail.Enabled = ColorSequence.new(Color3.fromRGB(table.unpack(skin.Color))), true
+end
+
+function Combat.give(player, id)
+	local def = Balance.Weapons[id]
+	if not def or not player.Character or not player:FindFirstChild("Backpack") then return false end
+	local list = Combat.Inventory[player] or {}; Combat.Inventory[player] = list
+	if list[id] and list[id].tool.Parent then Combat.refill(player, id, true); return true end
+	local tool = Instance.new("Tool")
+	tool.Name, tool.CanBeDropped, tool.RequiresHandle = def.Name, false, true
+	tool:SetAttribute("WeaponId", id)
+	tool.Grip = CFrame.new(0, -0.15, 0.2) * CFrame.Angles(0, 0, 0)
+	local function gunpart(name, size, offset, color)
+		local p = Instance.new("Part"); p.Name, p.Size, p.Color = name, size, color
+		p.CanCollide, p.CanTouch, p.CanQuery, p.Massless, p.Material = false, false, false, true, Enum.Material.Metal
+		p.CFrame, p.Parent = offset, tool
+		return p
+	end
+	local handle = gunpart("Handle", Vector3.new(0.35, 0.85, 0.4), CFrame.identity, Color3.fromRGB(40, 43, 47))
+	local length = if id == "Pistol" then 1.4 elseif id == "Shotgun" then 3.2 else 2.6
+	for _, spec in {
+		{ "Corpo", Vector3.new(0.55, 0.55, length), CFrame.new(0, 0.45, -length / 2 + 0.3), Color3.fromRGB(47, 52, 57) },
+		{ "Acabamento", Vector3.new(0.57, 0.2, length * 0.6), CFrame.new(0, 0.65, -length / 2 + 0.3), Color3.fromRGB(table.unpack(def.Color)) },
+		{ "Cano", Vector3.new(0.22, 0.22, 0.6), CFrame.new(0, 0.45, -length + 0.1), Color3.fromRGB(22, 24, 28) },
+	} do
+		local p = gunpart(table.unpack(spec))
+		local weld = Instance.new("WeldConstraint"); weld.Part0, weld.Part1, weld.Parent = handle, p, p
+	end
+	local muzzle = Instance.new("Attachment"); muzzle.Name, muzzle.Position, muzzle.Parent = "Muzzle", Vector3.new(0, 0.45, -length - 0.2), handle
+	local record = { tool = tool, id = id, ammo = def.Magazine, reserve = def.Reserve, tier = 0, reloading = false, nextShot = 0 }
+	list[id] = record
+	sync(record)
+	tool.Parent = player.Backpack
+	Combat.recolor(player)
+	local _, hum = Util.alive(player)
+	if hum then hum:EquipTool(tool) end
+	return true
+end
+
+function Combat.clear(player)
+	for _, record in Combat.Inventory[player] or {} do record.tool:Destroy() end
+	Combat.Inventory[player] = {}
+end
+
+function Combat.refill(player, id, full)
+	local record = if id then (Combat.Inventory[player] or {})[id] else equipped(player)
+	if not record or not record.tool.Parent then return false end
+	local def = Balance.Weapons[record.id]
+	record.reserve = math.min(def.Reserve, record.reserve + (if full then def.Reserve else math.ceil(def.Reserve * 0.35)))
+	if full then record.ammo = def.Magazine end
+	sync(record)
+	return true
+end
+
+function Combat.owned(player, id)
+	local record = (Combat.Inventory[player] or {})[id]
+	return record and record.tool.Parent ~= nil
+end
+
+function Combat.upgrade(player)
+	local record = equipped(player)
+	if not record or record.tier &gt;= 3 then return false end
+	record.tier += 1
+	record.ammo, record.reserve = Balance.Weapons[record.id].Magazine, Balance.Weapons[record.id].Reserve
+	record.tool.Name = Balance.Weapons[record.id].Name .. " +" .. record.tier
+	sync(record)
+	return true
+end
+
+function Combat.canUpgrade(player)
+	local record = equipped(player)
+	return record and record.tier &lt; 3
+end
+
+function Combat.hasEquipped(player) return equipped(player) ~= nil end
+
+function Combat.reload(player)
+	local record = equipped(player)
+	if not record or not Util.alive(player) or not player:GetAttribute("InRound") then return end
+	local def = Balance.Weapons[record.id]
+	if record.reloading or record.ammo &gt;= def.Magazine or record.reserve &lt;= 0 then return end
+	record.reloading = true
+	sync(record)
+	local duration = def.Reload * (if player:GetAttribute("QuickHands") then 0.65 else 1)
+	task.delay(duration, function()
+		if not record.tool.Parent then return end
+		local load = math.min(def.Magazine - record.ammo, record.reserve)
+		record.ammo += load; record.reserve -= load; record.reloading = false
+		sync(record)
+	end)
+end
+
+function Combat.fire(player, aim)
+	if not Util.finiteVector(aim) or not player:GetAttribute("InRound") then return end
+	local alive, _, root = Util.alive(player)
+	local record = equipped(player)
+	if not alive or not record or record.tool.Parent ~= player.Character or record.reloading then return end
+	local def = Balance.Weapons[record.id]
+	local now = os.clock()
+	if now &lt; record.nextShot or record.ammo &lt; 1 then return end
+	local head = player.Character:FindFirstChild("Head")
+	local origin = if head then head.Position else root.Position + Vector3.new(0, 1.5, 0)
+	local delta = aim - origin
+	if delta.Magnitude &lt; 1 then return end
+	record.nextShot = now + def.Interval * 0.95
+	record.ammo -= 1
+	sync(record)
+	local base = delta.Unit
+	local basis = CFrame.lookAt(Vector3.zero, base)
+	local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude
+	local ignore = {}
+	for _, p in Players:GetPlayers() do if p.Character then table.insert(ignore, p.Character) end end
+	local drops = workspace:FindFirstChild("ZumbiDrops"); if drops then table.insert(ignore, drops) end
+	params.FilterDescendantsInstances = ignore
+	local hits, anyHit, headshot = {}, false, false
+	local segments = {}
+	for _ = 1, def.Pellets do
+		local direction = (base + basis.RightVector * rng:NextNumber(-def.Spread, def.Spread) + basis.UpVector * rng:NextNumber(-def.Spread, def.Spread)).Unit
+		local result = workspace:Raycast(origin, direction * def.Range, params)
+		local finish = if result then result.Position else origin + direction * def.Range
+		table.insert(segments, finish)
+		local model = result and result.Instance:FindFirstAncestorOfClass("Model")
+		if model and Zombies.Active[model] then
+			local isHead = result.Instance.Name == "Head" or result.Instance.Name == "Olho"
+			headshot = headshot or isHead
+			local damage = Balance.upgradeDamage(def.Damage, record.tier) * (if isHead then 1.7 else 1)
+			hits[model] = (hits[model] or 0) + damage
+			anyHit = true
+		end
+	end
+	for model, damage in hits do Zombies.damage(model, damage, player) end
+	-- Send visual data only; clients cannot nominate victims or damage.
+	Combat.Effects:FireAllClients("Shot", { UserId = player.UserId, Origin = origin, Ends = segments })
+	if anyHit then Combat.Effects:FireClient(player, "Hit", { Head = headshot }) end
+end
+
+function Combat.start(remotes)
+	Combat.Effects = remotes.Effects
+	local allowFire, allowReload = Util.limiter(18, 8), Util.limiter(2, 2)
+	remotes.Fire.OnServerEvent:Connect(function(player, aim) if allowFire(player) then Combat.fire(player, aim) end end)
+	remotes.Reload.OnServerEvent:Connect(function(player) if allowReload(player) then Combat.reload(player) end end)
+	Players.PlayerRemoving:Connect(function(player) Combat.clear(player); Combat.Inventory[player] = nil end)
+end
+
+return Combat
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX11">
+        <Properties>
+          <string name="Name">CommerceService</string>
+          <ProtectedString name="Source">local MarketplaceService = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
+local Config = require(game.ReplicatedStorage.ZumbiShared.Config)
+local Data = require(script.Parent.DataService)
+
+local Commerce = { Catalog = {}, OnPassChanged = nil }
+local productsById = {}
+
+function Commerce.refreshPass(player, attempt)
+	local owned = false
+	if Config.VanguardPassId &gt; 0 then
+		local ok, result = pcall(function() return MarketplaceService:UserOwnsGamePassAsync(player.UserId, Config.VanguardPassId) end)
+		if not ok then
+			-- A network error must not revoke a pass already verified this session.
+			if player.Parent and (attempt or 1) &lt; 3 then
+				task.delay(8, function() if player.Parent then Commerce.refreshPass(player, (attempt or 1) + 1) end end)
+			end
+			return
+		end
+		owned = result
+	end
+	if not player.Parent then return end
+	player:SetAttribute("Vanguard", owned)
+	if Commerce.OnPassChanged then Commerce.OnPassChanged(player) end
+end
+
+function Commerce.sendCatalog(player, remote)
+	remote:FireClient(player, "Catalog", Commerce.Catalog)
+end
+
+function Commerce.start(effects, onPassChanged)
+	Commerce.OnPassChanged = onPassChanged
+	for _, product in Config.Products do
+		assert(product.Id == 0 or not productsById[product.Id], "Developer Product IDs must be unique")
+		if product.Id &gt; 0 then productsById[product.Id] = product end
+	end
+	MarketplaceService.ProcessReceipt = function(receipt)
+		local product = productsById[receipt.ProductId]
+		local player = Players:GetPlayerByUserId(receipt.PlayerId)
+		if not player or not product then return Enum.ProductPurchaseDecision.NotProcessedYet end
+		if Data.receipt(player, tostring(receipt.PurchaseId), product) then
+			effects:FireClient(player, "Toast", { Text = "Compra entregue e salva: " .. product.Name, Good = true })
+			return Enum.ProductPurchaseDecision.PurchaseGranted
+		end
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, id, purchased)
+		if purchased and id == Config.VanguardPassId then task.spawn(Commerce.refreshPass, player) end
+	end)
+	task.spawn(function()
+		for _, product in Config.Products do
+			local entry = { Id = product.Id, Key = product.Key, Name = product.Name, Description = product.Description, Kind = "Product", Available = false }
+			if product.Id &gt; 0 then
+				local ok, info = pcall(function() return MarketplaceService:GetProductInfo(product.Id, Enum.InfoType.Product) end)
+				if ok and info.IsForSale and info.PriceInRobux then entry.Available, entry.Price = true, info.PriceInRobux end
+			end
+			table.insert(Commerce.Catalog, entry)
+		end
+		local pass = { Id = Config.VanguardPassId, Key = "Vanguard", Name = Config.VanguardName,
+			Description = "+25 vida base e +2 velocidade • permanente", Kind = "Pass", Available = false }
+		if pass.Id &gt; 0 then
+			local ok, info = pcall(function() return MarketplaceService:GetProductInfo(pass.Id, Enum.InfoType.GamePass) end)
+			if ok and info.IsForSale and info.PriceInRobux then pass.Available, pass.Price = true, info.PriceInRobux end
+		end
+		table.insert(Commerce.Catalog, pass)
+		effects:FireAllClients("Catalog", Commerce.Catalog)
+	end)
+end
+
+return Commerce
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX12">
+        <Properties>
+          <string name="Name">DataService</string>
+          <ProtectedString name="Source">local Players = game:GetService("Players")
+local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local Balance = require(game.ReplicatedStorage.ZumbiShared.Balance)
+local Config = require(game.ReplicatedStorage.ZumbiShared.Config)
+local Profile = require(game.ReplicatedStorage.ZumbiShared.Profile)
+
+local Data = { Profiles = {}, Loading = {} }
+local store
+local storeAvailable, storeResult = pcall(function() return DataStoreService:GetDataStore(Config.DataStoreName) end)
+if storeAvailable then store = storeResult end
+local session = game.JobId .. ":" .. HttpService:GenerateGUID(false)
+local shuttingDown = false
+
+function Data.sync(player)
+	local p = Data.Profiles[player]
+	if not p then return end
+	local d = p.data
+	player:SetAttribute("Coins", d.Coins)
+	player:SetAttribute("Revives", d.Revives)
+	player:SetAttribute("Skin", d.Skin)
+	player:SetAttribute("BestWave", d.BestWave)
+	player:SetAttribute("Wins", d.Wins)
+	player:SetAttribute("BoostUntil", d.BoostUntil)
+	player:SetAttribute("DataPersistent", p.persistent)
+	for key in Balance.Skins do player:SetAttribute("Skin_" .. key, d.Skins[key] == true) end
+	local stats = player:FindFirstChild("leaderstats")
+	if stats then stats.Abates.Value = d.Kills; stats.Recorde.Value = d.BestWave end
+end
+
+function Data.load(player)
+	if Data.Loading[player] or Data.Profiles[player] then return end
+	Data.Loading[player] = true
+	local loaded
+	local ok, err
+	for attempt = 1, 3 do
+		ok, err = pcall(function()
+			assert(store, "DataStore unavailable in this place")
+			loaded = store:UpdateAsync("u_" .. player.UserId, function(old)
+				if Profile.lockedByOther(old, session, os.time()) then return nil end
+				local d = Profile.normalize(old)
+				d.Session = { Id = session, Until = os.time() + 150 }
+				return d
+			end)
+		end)
+		if ok then break end
+		if attempt &lt; 3 then task.wait(attempt) end
+	end
+	Data.Loading[player] = nil
+	if not player.Parent then
+		if ok and loaded then
+			pcall(function() store:UpdateAsync("u_" .. player.UserId, function(old)
+				if old and old.Session and old.Session.Id == session then old.Session = nil; return old end
+				return nil
+			end) end)
+		end
+		return
+	end
+	if ok and not loaded then player:Kick("Seus dados estão abertos em outro servidor. Aguarde 2 minutos e tente novamente."); return end
+	if not ok and not RunService:IsStudio() then
+		warn("[ZUMBI] Profile load failed; purchases disabled: " .. tostring(err))
+		player:Kick("Não foi possível carregar seus dados com segurança. Tente novamente em instantes.")
+		return
+	end
+	if not ok then warn("[ZUMBI] Studio sem DataStore: progresso temporário; compras desativadas.") end
+	Data.Profiles[player] = { data = Profile.normalize(loaded), persistent = ok, busy = false, closing = false, lastSaved = os.clock() }
+	local stats = Instance.new("Folder"); stats.Name = "leaderstats"; stats.Parent = player
+	for _, key in { "Abates", "Recorde" } do local v = Instance.new("IntValue"); v.Name = key; v.Parent = stats end
+	Data.sync(player)
+	player:SetAttribute("DataReady", true)
+end
+
+function Data.award(player, coins, kills)
+	local p = Data.Profiles[player]
+	if not p or p.closing then return end
+	if not Profile.credit(p.data, coins or 0, kills or 0) then return false end
+	Data.sync(player)
+	return true
+end
+
+function Data.spend(player, amount)
+	local p = Data.Profiles[player]
+	if not p or p.closing or not Profile.debit(p.data, amount) then return false end
+	Data.sync(player)
+	return true
+end
+
+function Data.record(player, wave, won)
+	local p = Data.Profiles[player]
+	if not p or p.closing or not Profile.isInteger(wave) then return end
+	p.data.BestWave = math.max(p.data.BestWave, wave)
+	if won then p.data.Wins += 1 end
+	Data.sync(player)
+end
+
+function Data.cosmetic(player, key)
+	local skin = Balance.Skins[key]
+	local p = Data.Profiles[player]
+	if not p or p.closing or not skin then return end
+	if not p.data.Skins[key] then
+		if not Data.spend(player, skin.Price) then return false end
+		p.data.Skins[key] = true
+	end
+	p.data.Skin = key
+	Data.sync(player)
+	return true
+end
+
+function Data.useRevive(player)
+	local p = Data.Profiles[player]
+	if not p or p.closing or p.data.Revives &lt; 1 then return false end
+	p.data.Revives -= 1
+	Data.sync(player)
+	return true
+end
+
+local function lock(p)
+	while p.busy do task.wait(0.05) end
+	p.busy = true
+end
+
+function Data.save(player, release)
+	local p = Data.Profiles[player]
+	if not p then return true end
+	if not p.persistent then
+		if release then Data.Profiles[player] = nil end
+		return true
+	end
+	lock(p)
+	if release then p.closing = true end
+	local snapshot = Profile.copy(p.data)
+	snapshot.Session = if release then nil else { Id = session, Until = os.time() + 150 }
+	local saved
+	local ok, err = pcall(function()
+		saved = store:UpdateAsync("u_" .. player.UserId, function(old)
+			if not old or not old.Session or old.Session.Id ~= session then return nil end
+			return snapshot
+		end)
+	end)
+	p.busy = false
+	if ok and saved then
+		p.lastSaved = os.clock()
+		if release then Data.Profiles[player] = nil end
+		return true
+	end
+	warn("[ZUMBI] Save failed: " .. tostring(err or "session ownership lost"))
+	if not release and os.clock() - p.lastSaved &gt; 95 then
+		p.closing = true
+		player:SetAttribute("DataPersistent", false)
+		player:Kick("Conexão com seus dados interrompida. Reconecte para proteger seu progresso.")
+	end
+	return false
+end
+
+-- Acknowledge ONLY after the entitlement and receipt ID are saved atomically.
+function Data.receipt(player, receiptId, product)
+	if type(receiptId) ~= "string" or #receiptId == 0 or #receiptId &gt; 200 then return false end
+	local p = Data.Profiles[player]
+	if not p or not p.persistent or p.closing then return false end
+	lock(p)
+	if p.closing then p.busy = false; return false end
+	if p.data.Receipts[receiptId] then p.busy = false; return true end
+	local snapshot = Profile.copy(p.data)
+	if not Profile.grant(Profile.copy(snapshot), product, os.time()) then p.busy = false; return false end
+	local saved
+	local ok = pcall(function()
+		saved = store:UpdateAsync("u_" .. player.UserId, function(old)
+			if not old or not old.Session or old.Session.Id ~= session then return nil end
+			if old.Receipts and old.Receipts[receiptId] then return old end
+			local result = Profile.copy(snapshot)
+			if not Profile.grant(result, product, os.time()) then return nil end
+			result.Receipts[receiptId] = true
+			result.Session = { Id = session, Until = os.time() + 150 }
+			return result
+		end)
+	end)
+	if ok and saved and saved.Receipts[receiptId] then
+		-- Apply a delta so gameplay earnings made while UpdateAsync yielded survive.
+		if not Profile.grant(p.data, product, os.time()) then p.busy = false; return false end
+		p.data.Receipts[receiptId] = true
+		p.lastSaved = os.clock()
+		Data.sync(player)
+		p.busy = false
+		return true
+	end
+	p.busy = false
+	return false
+end
+
+function Data.start()
+	Players.PlayerRemoving:Connect(function(player)
+		for attempt = 1, 3 do if Data.save(player, true) then break end; task.wait(attempt) end
+	end)
+	task.spawn(function()
+		while not shuttingDown do
+			task.wait(40)
+			for player in Data.Profiles do task.spawn(Data.save, player, false) end
+		end
+	end)
+	game:BindToClose(function()
+		shuttingDown = true
+		local pending = 0
+		for player in Data.Profiles do
+			pending += 1
+			task.spawn(function()
+				for attempt = 1, 3 do if Data.save(player, true) then break end; task.wait(attempt) end
+				pending -= 1
+			end)
+		end
+		local deadline = os.clock() + 25
+		while pending &gt; 0 and os.clock() &lt; deadline do task.wait(0.1) end
+	end)
+end
+
+return Data
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX13">
+        <Properties>
+          <string name="Name">GameService</string>
+          <ProtectedString name="Source">local Players = game:GetService("Players")
+local PhysicsService = game:GetService("PhysicsService")
+local Balance = require(game.ReplicatedStorage.ZumbiShared.Balance)
+local Data = require(script.Parent.DataService)
+local World = require(script.Parent.World)
+local Util = require(script.Parent.Util)
+local Combat = require(script.Parent.CombatService)
+local Zombies = require(script.Parent.ZombieService)
+local Commerce = require(script.Parent.CommerceService)
+
+local Game = { Phase = "Waiting", Wave = 0, Round = 0, Spawning = {}, Remaining = 0, EndsAt = 0, WipeAt = nil,
+	Repairs = {}, Mystery = {}, TrapUntil = 0, TrapCooldown = 0 }
+local rng = Random.new()
+local remotes, state
+
+local function toast(player, text, good)
+	remotes.Effects:FireClient(player, "Toast", { Text = text, Good = good == true })
+end
+
+local function announce(text)
+	remotes.Effects:FireAllClients("Announcement", { Text = text })
+end
+
+local function publish()
+	state:SetAttribute("Phase", Game.Phase)
+	state:SetAttribute("Wave", Game.Wave)
+	state:SetAttribute("Remaining", Game.Remaining)
+	state:SetAttribute("Enemies", Zombies.count())
+	state:SetAttribute("EndsAt", Game.EndsAt)
+	state:SetAttribute("Power", World.Powered)
+	state:SetAttribute("WipeAt", Game.WipeAt or 0)
+	state:SetAttribute("Living", #Util.livingPlayers())
+	state:SetAttribute("Round", Game.Round)
+end
+
+function Game.stats(player)
+	local alive, hum = Util.alive(player)
+	if not alive then return end
+	local maxHealth = 100 + (if player:GetAttribute("Vanguard") then 25 else 0) + (if player:GetAttribute("Juggernaut") then 75 else 0)
+	local delta = maxHealth - hum.MaxHealth
+	hum.MaxHealth = maxHealth
+	hum.Health = math.clamp(hum.Health + math.max(0, delta), 0, maxHealth)
+	hum.WalkSpeed = (if player:GetAttribute("Sprinting") then Balance.SprintSpeed else Balance.BaseSpeed)
+		+ (if player:GetAttribute("Runner") then 3 else 0) + (if player:GetAttribute("Vanguard") then 2 else 0)
+end
+
+local function resetPerks(player)
+	for key in Balance.Perks do player:SetAttribute(key, false) end
+	player:SetAttribute("RoundRevives", 0)
+	player:SetAttribute("BoughtRescue", false)
+	player:SetAttribute("Stamina", 100)
+	player:SetAttribute("Sprinting", false)
+	player:SetAttribute("RoundKills", 0)
+end
+
+function Game.spawn(player, fresh)
+	if Game.Spawning[player] or not player.Parent or not player:GetAttribute("DataReady") then return end
+	Game.Spawning[player] = true
+	local round = Game.Round
+	if fresh then resetPerks(player) end
+	player:SetAttribute("InRound", false)
+	Combat.clear(player)
+	local ok, err = pcall(function() player:LoadCharacterAsync() end)
+	if ok and player.Parent and player.Character and round == Game.Round then
+		local root = player.Character:WaitForChild("HumanoidRootPart", 8)
+		if root and Game.Phase ~= "GameOver" and Game.Phase ~= "Victory" then
+			player.Character:PivotTo(CFrame.new(World.Spawn + Vector3.new(rng:NextNumber(-6, 6), 0, rng:NextNumber(-5, 5))))
+			player:SetAttribute("InRound", true)
+			player:SetAttribute("Eliminated", false)
+			player:SetAttribute("InvulnerableUntil", workspace:GetServerTimeNow() + 8)
+			Game.stats(player)
+			local shield = Instance.new("ForceField"); shield.Visible, shield.Parent = true, player.Character
+			task.delay(8, function() shield:Destroy() end)
+			Combat.give(player, "Pistol")
+		end
+	else warn("[ZUMBI] Character spawn failed: " .. tostring(err)) end
+	Game.Spawning[player] = nil
+end
+
+function Game.addPlayer(player)
+	player:SetAttribute("InRound", false)
+	player:SetAttribute("Eliminated", false)
+	resetPerks(player)
+	player.CharacterAdded:Connect(function(character)
+		local hum = character:WaitForChild("Humanoid", 10)
+		if not hum then return end
+		local function collide(part)
+			if part:IsA("BasePart") then part.CollisionGroup = "Survivors" end
+		end
+		for _, p in character:GetDescendants() do collide(p) end
+		character.DescendantAdded:Connect(collide)
+		hum.Died:Connect(function()
+			if player.Character ~= character then return end
+			player:SetAttribute("InRound", false)
+			player:SetAttribute("Eliminated", true)
+			player:SetAttribute("Sprinting", false)
+			toast(player, "Eliminado. Você retorna na pausa seguinte; um resgate permite voltar agora.", false)
+		end)
+	end)
+	Data.load(player)
+	if not player.Parent or not player:GetAttribute("DataReady") then return end
+	task.spawn(Commerce.refreshPass, player)
+	if Game.Phase ~= "Waiting" and Game.Phase ~= "Victory" and Game.Phase ~= "GameOver" then Game.spawn(player, true) end
+end
+
+local function buy(player, cost)
+	if not Data.spend(player, cost) then toast(player, "Suprimentos insuficientes • precisa de " .. cost .. " moedas."); return false end
+	return true
+end
+
+function Game.interact(player, action, arg)
+	if not player:GetAttribute("InRound") or not Util.alive(player) or Game.Phase == "GameOver" or Game.Phase == "Victory" then return false end
+	if action == "Door" then
+		if buy(player, arg.Price) then announce(player.DisplayName .. " abriu " .. arg.Name); return true end
+	elseif action == "Weapon" then
+		local def = Balance.Weapons[arg]
+		local owned = Combat.owned(player, arg)
+		local cost = if owned then Balance.refillCost(def.Price) else def.Price
+		if buy(player, cost) then
+			Combat.give(player, arg)
+			toast(player, if owned then "Arma reabastecida." else def.Name .. " equipada!", true)
+			return true
+		end
+	elseif action == "Ammo" then
+		if not Combat.hasEquipped(player) then toast(player, "Equipe uma arma primeiro."); return false end
+		if buy(player, 45) then Combat.refill(player, nil, true); toast(player, "Munição completa.", true); return true end
+	elseif action == "Upgrade" then
+		if not World.Powered then toast(player, "Ligue a energia na central ao norte."); return false end
+		if not Combat.canUpgrade(player) then toast(player, "Equipe uma arma abaixo do nível 3."); return false end
+		if buy(player, Balance.UpgradeCost) then Combat.upgrade(player); toast(player, "Arma aprimorada! +45% do dano base por nível.", true); return true end
+	elseif action == "Perk" then
+		if not World.Powered then toast(player, "Os buffs precisam da energia da central."); return false end
+		if player:GetAttribute(arg) then toast(player, "Esse buff já está ativo nesta partida."); return false end
+		if buy(player, Balance.Perks[arg].Price) then
+			player:SetAttribute(arg, true); Game.stats(player)
+			toast(player, Balance.Perks[arg].Name .. " ativo até o fim da partida!", true)
+			return true
+		end
+	elseif action == "Power" then
+		if World.Powered then toast(player, "A energia já está ligada."); return false end
+		if buy(player, 180) then
+			World.Powered = true
+			World.PowerPanel.Color = Color3.fromRGB(80, 255, 170)
+			announce("ENERGIA RESTAURADA • buffs, aprimoramento e armadilha disponíveis")
+			publish(); return true
+		end
+	elseif action == "Heal" then
+		local _, hum = Util.alive(player)
+		if hum.Health &gt;= hum.MaxHealth then toast(player, "Sua vida está completa."); return false end
+		if buy(player, 60) then hum.Health = hum.MaxHealth; toast(player, "Vida recuperada.", true); return true end
+	elseif action == "RoundRevive" then
+		if player:GetAttribute("BoughtRescue") then toast(player, "Você já comprou o resgate desta partida."); return false end
+		if buy(player, 90) then
+			player:SetAttribute("BoughtRescue", true)
+			player:SetAttribute("RoundRevives", (player:GetAttribute("RoundRevives") or 0) + 1)
+			toast(player, "Resgate pronto. Use o botão RESGATAR quando for eliminado.", true)
+			return true
+		end
+	elseif action == "Loot" then
+		local _, hum = Util.alive(player)
+		local roll = rng:NextInteger(1, 3)
+		if roll == 1 then Combat.refill(player, nil, false); toast(player, "Suprimentos: munição +25 moedas", true); Data.award(player, 25)
+		elseif roll == 2 then hum.Health = math.min(hum.MaxHealth, hum.Health + 45); Data.award(player, 25); toast(player, "Suprimentos: cura +25 moedas", true)
+		else Data.award(player, 65); toast(player, "Suprimentos: +65 moedas", true) end
+		return true
+	elseif action == "Mystery" then
+		if Game.Mystery[player] == Game.Wave then toast(player, "Resgate gratuito já usado nesta horda."); return false end
+		Game.Mystery[player] = Game.Wave
+		local pool = { "Pistol", "SMG", "Shotgun", "Rifle" }
+		local id = pool[rng:NextInteger(1, #pool)]
+		Combat.give(player, id)
+		toast(player, "Resgate gratuito: " .. Balance.Weapons[id].Name .. " • 25% cada arma", true)
+		return true
+	elseif action == "Repair" then
+		Game.Repairs[player] = Game.Repairs[player] or {}
+		if Game.Repairs[player][arg] == Game.Wave then toast(player, "Barricada reparada nesta horda."); return false end
+		Game.Repairs[player][arg] = Game.Wave
+		Data.award(player, 20); toast(player, "Barricada reforçada • +20 moedas", true)
+		return true
+	elseif action == "Trap" then
+		local now = workspace:GetServerTimeNow()
+		if not World.Powered then toast(player, "Ligue a energia primeiro."); return false end
+		if Game.TrapCooldown &gt; now then toast(player, "Armadilha recarregando • " .. math.ceil(Game.TrapCooldown - now) .. "s"); return false end
+		if buy(player, 80) then
+			Game.TrapUntil, Game.TrapCooldown = now + 12, now + 50
+			remotes.Effects:FireAllClients("Trap", { Position = Vector3.new(0, 1, -18), Duration = 12 })
+			return true
+		end
+	end
+	return false
+end
+
+local function onKill(z)
+	local killer = z.killer
+	if killer and killer.Parent then
+		local boosted = (killer:GetAttribute("BoostUntil") or 0) &gt; os.time()
+		local reward = Balance.killReward(Game.Wave, boosted) * (if z.boss then 6 else 1)
+		Data.award(killer, reward, 1)
+		killer:SetAttribute("RoundKills", (killer:GetAttribute("RoundKills") or 0) + 1)
+		remotes.Effects:FireClient(killer, "Kill", { Coins = reward, Boss = z.boss })
+	end
+	for player in z.hits do if player ~= killer and player.Parent then Data.award(player, Balance.AssistCoins) end end
+	if rng:NextNumber() &lt; 0.17 then World.drop(z.root.Position, function(player) Combat.refill(player, nil, false) end) end
+end
+
+local function loadedPlayers()
+	local result = {}
+	for _, player in Players:GetPlayers() do if player:GetAttribute("DataReady") then table.insert(result, player) end end
+	return result
+end
+
+local function hasSurvivors()
+	if #loadedPlayers() == 0 then return false end
+	if #Util.livingPlayers() &gt; 0 or next(Game.Spawning) then Game.WipeAt = nil; return true end
+	if not Game.WipeAt then Game.WipeAt = workspace:GetServerTimeNow() + 8; announce("EQUIPE ELIMINADA • 8 segundos para usar um resgate") end
+	return workspace:GetServerTimeNow() &lt; Game.WipeAt
+end
+
+local function phase(name, duration)
+	Game.Phase, Game.EndsAt, Game.WipeAt = name, workspace:GetServerTimeNow() + (duration or 0), nil
+	publish()
+end
+
+local function prep(initial)
+	phase("Preparation", if initial then Balance.InitialPrep else Balance.BetweenWaves)
+	Game.Repairs, Game.Mystery = {}, {}
+	World.resetLoot()
+	for _, player in loadedPlayers() do
+		if not player:GetAttribute("InRound") or initial then task.spawn(Game.spawn, player, initial) end
+		local alive, hum = Util.alive(player)
+		if alive then hum.Health = hum.MaxHealth end
+	end
+	announce(if initial then "VOO 813 CAIU • explore, encontre armas e prepare a defesa" else "HORDA CONCLUÍDA • cure-se, reabasteça e prepare-se")
+	if initial then World.crash() end
+	while workspace:GetServerTimeNow() &lt; Game.EndsAt do
+		if #loadedPlayers() == 0 then return false end
+		publish(); task.wait(0.4)
+	end
+	return true
+end
+
+local function runWave(wave)
+	Game.Wave = wave
+	local settings = Balance.wave(wave, #loadedPlayers())
+	Game.Remaining = settings.Count + (if settings.Boss then 1 else 0)
+	Game.Repairs, Game.Mystery = {}, {}
+	World.resetLoot()
+	phase("Wave", 0)
+	announce("HORDA " .. wave .. (if settings.Boss then " • O COMANDANTE CHEGOU" else " • DEFENDAM A CIDADE"))
+	if settings.Boss then Zombies.spawn(settings, true); Game.Remaining -= 1 end
+	local nextSpawn = 0
+	while Game.Remaining &gt; 0 or Zombies.count() &gt; 0 do
+		if not hasSurvivors() then return false end
+		if os.clock() &gt;= nextSpawn and Game.Remaining &gt; 0 and Zombies.count() &lt; Balance.MaxLivingZombies then
+			local spawned = Zombies.spawn(settings, false)
+			if spawned then Game.Remaining -= 1 end
+			nextSpawn = os.clock() + settings.SpawnInterval
+		end
+		publish(); task.wait(0.2)
+	end
+	for _, player in loadedPlayers() do Data.award(player, Balance.WaveCoins + wave * 3); Data.record(player, wave, false) end
+	return true
+end
+
+local function extract()
+	phase("Extraction", Balance.ExtractionTime)
+	World.extraction()
+	announce("RESGATE A CAMINHO • alcance o heliponto junto ao avião antes do cronômetro zerar")
+	remotes.Effects:FireAllClients("Waypoint", { Position = World.Extraction })
+	local nextSpawn = 0
+	while workspace:GetServerTimeNow() &lt; Game.EndsAt do
+		if not hasSurvivors() then return false end
+		if os.clock() &gt; nextSpawn and Zombies.count() &lt; 18 then
+			Zombies.spawn(Balance.wave(Balance.FinalWave, #loadedPlayers()), false)
+			nextSpawn = os.clock() + 1.4
+		end
+		publish(); task.wait(0.25)
+	end
+	local winners = 0
+	for _, player in Util.livingPlayers() do
+		local _, _, root = Util.alive(player)
+		local delta = root.Position - World.Extraction
+		if math.abs(delta.X) &lt;= 16 and math.abs(delta.Z) &lt;= 16 and root.Position.Y &lt; 25 then
+			winners += 1
+			Data.award(player, Balance.ExtractionCoins)
+			Data.record(player, Balance.FinalWave, true)
+			toast(player, "EXTRAÍDO! +300 moedas • vitória salva", true)
+		else toast(player, "O helicóptero partiu sem você. Alcance a zona verde na próxima tentativa.") end
+	end
+	return winners &gt; 0
+end
+
+function Game.start(remoteFolder, stateFolder)
+	remotes, state = remoteFolder, stateFolder
+	World.build(Game.interact)
+	Zombies.init(onKill)
+	Combat.start(remotes)
+	Data.start()
+	Commerce.start(remotes.Effects, Game.stats)
+	local allowAction = Util.limiter(5, 8)
+	remotes.Action.OnServerEvent:Connect(function(player, action, arg)
+		if not allowAction(player) or type(action) ~= "string" then return end
+		if action == "Ready" then Commerce.sendCatalog(player, remotes.Effects); return end
+		if not player:GetAttribute("DataReady") then return end
+		if action == "Skin" and type(arg) == "string" and #arg &lt; 30 then
+			if Data.cosmetic(player, arg) then Combat.recolor(player); toast(player, "Acabamento equipado!", true)
+			else toast(player, "Moedas insuficientes ou acabamento inválido.") end
+		elseif action == "Sprint" and type(arg) == "boolean" then
+			player:SetAttribute("Sprinting", arg and player:GetAttribute("InRound") and (player:GetAttribute("Stamina") or 0) &gt; 5)
+			Game.stats(player)
+		elseif action == "Revive" then
+			if Game.Phase ~= "Wave" and Game.Phase ~= "Extraction" then toast(player, "Você retorna automaticamente na próxima preparação."); return end
+			if player:GetAttribute("InRound") or Game.Spawning[player] then return end
+			local tokens = player:GetAttribute("RoundRevives") or 0
+			if tokens &gt; 0 then player:SetAttribute("RoundRevives", tokens - 1)
+			elseif not Data.useRevive(player) then toast(player, "Sem resgates. Há um reanimador por moedas na igreja."); return end
+			-- Invalidate the wipe timer immediately; spawning may yield for avatar loading.
+			Game.WipeAt = nil
+			task.spawn(Game.spawn, player, false)
+		end
+	end)
+	Players.PlayerAdded:Connect(function(player) task.spawn(Game.addPlayer, player) end)
+	Players.PlayerRemoving:Connect(function(player)
+		Game.Spawning[player], Game.Repairs[player], Game.Mystery[player] = nil, nil, nil
+	end)
+	for _, player in Players:GetPlayers() do task.spawn(Game.addPlayer, player) end
+	-- Server stamina and electric trap updates do not depend on client frame rate.
+	task.spawn(function()
+		while true do
+			for _, player in Players:GetPlayers() do
+				local alive, hum, root = Util.alive(player)
+				if alive then
+					local stamina = player:GetAttribute("Stamina") or 100
+					local velocity = root.AssemblyLinearVelocity
+					local running = player:GetAttribute("Sprinting") and Vector3.new(velocity.X, 0, velocity.Z).Magnitude &gt; 3
+					stamina = math.clamp(stamina + (if running then -4 else 2.8), 0, 100)
+					player:SetAttribute("Stamina", stamina)
+					if stamina &lt;= 0 and player:GetAttribute("Sprinting") then player:SetAttribute("Sprinting", false); Game.stats(player) end
+				end
+			end
+			if workspace:GetServerTimeNow() &lt; Game.TrapUntil then
+				for model, z in Zombies.Active do
+					if (z.root.Position - Vector3.new(0, 2, -18)).Magnitude &lt; 25 then Zombies.damage(model, 18, nil) end
+				end
+			end
+			task.wait(0.2)
+		end
+	end)
+	task.spawn(function()
+		while true do
+			phase("Waiting", 0)
+			while #loadedPlayers() == 0 do task.wait(1) end
+			Game.Round += 1
+			Game.Wave, Game.Remaining, Game.TrapUntil, Game.TrapCooldown = 0, 0, 0, 0
+			Zombies.clear(); World.reset()
+			local completed = prep(true)
+			if completed then
+				for wave = 1, Balance.FinalWave do
+					if not runWave(wave) then completed = false; break end
+					if wave &lt; Balance.FinalWave and not prep(false) then completed = false; break end
+				end
+			end
+			local won = completed and extract()
+			Zombies.clear()
+			phase(if won then "Victory" else "GameOver", 15)
+			announce(if won then "ÚLTIMO VOO • SOBREVIVENTES EXTRAÍDOS" else "A CIDADE CAIU • REAGRUPANDO EM 15 SEGUNDOS")
+			for _, player in loadedPlayers() do
+				player:SetAttribute("InRound", false)
+				task.spawn(Data.save, player, false)
+			end
+			task.wait(15)
+		end
+	end)
+end
+
+return Game
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX14">
+        <Properties>
+          <string name="Name">Util</string>
+          <ProtectedString name="Source">local Players = game:GetService("Players")
+local Util = {}
+
+function Util.folder(parent, name)
+	local found = parent:FindFirstChild(name)
+	if found then return found end
+	local folder = Instance.new("Folder")
+	folder.Name, folder.Parent = name, parent
+	return folder
+end
+
+function Util.alive(player)
+	local char = player.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	return hum and hum.Health &gt; 0 and root ~= nil, hum, root
+end
+
+function Util.finiteVector(v)
+	return typeof(v) == "Vector3" and v.X == v.X and v.Y == v.Y and v.Z == v.Z
+		and math.abs(v.X) &lt; 10000 and math.abs(v.Y) &lt; 10000 and math.abs(v.Z) &lt; 10000
+end
+
+function Util.near(player, position, distance)
+	local alive, _, root = Util.alive(player)
+	return alive and (root.Position - position).Magnitude &lt;= distance
+end
+
+function Util.livingPlayers()
+	local result = {}
+	for _, player in Players:GetPlayers() do
+		if player:GetAttribute("InRound") and Util.alive(player) then table.insert(result, player) end
+	end
+	return result
+end
+
+-- Token buckets are per player AND action. No yielding occurs during acceptance.
+function Util.limiter(rate, burst)
+	local buckets = setmetatable({}, { __mode = "k" })
+	return function(player)
+		local now = os.clock()
+		local b = buckets[player] or { tokens = burst, at = now }
+		b.tokens = math.min(burst, b.tokens + (now - b.at) * rate)
+		b.at = now
+		buckets[player] = b
+		if b.tokens &lt; 1 then return false end
+		b.tokens -= 1
+		return true
+	end
+end
+
+return Util
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX15">
+        <Properties>
+          <string name="Name">World</string>
+          <ProtectedString name="Source">local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+local Util = require(script.Parent.Util)
+
+local World = { Spawn = Vector3.new(0, 4, 80), Extraction = Vector3.new(0, 0.4, 132), Doors = {}, Loot = {}, Powered = false }
+local rng = Random.new(8137)
+local palette = { concrete = Color3.fromRGB(67, 73, 77), brick = Color3.fromRGB(103, 72, 62), wood = Color3.fromRGB(91, 71, 51), glow = Color3.fromRGB(100, 230, 210) }
+
+local function part(parent, name, size, cf, color, material)
+	local p = Instance.new("Part")
+	p.Name, p.Size, p.CFrame, p.Color = name, size, cf, color
+	p.Anchored, p.TopSurface, p.BottomSurface = true, Enum.SurfaceType.Smooth, Enum.SurfaceType.Smooth
+	p.Material = material or Enum.Material.Concrete
+	p.Parent = parent
+	return p
+end
+
+local function label(anchor, text, color, size)
+	local gui = Instance.new("BillboardGui")
+	gui.Name, gui.Size, gui.StudsOffset = "Sign", UDim2.fromOffset(size or 240, 62), Vector3.new(0, 3, 0)
+	gui.MaxDistance, gui.AlwaysOnTop, gui.Parent = 115, false, anchor
+	local t = Instance.new("TextLabel")
+	t.Size, t.BackgroundTransparency, t.Text = UDim2.fromScale(1, 1), 0.2, text
+	t.BackgroundColor3, t.TextColor3, t.TextSize = Color3.fromRGB(13, 20, 23), color or Color3.fromRGB(235, 233, 216), 17
+	t.Font, t.TextWrapped, t.Parent = Enum.Font.GothamBold, true, gui
+	Instance.new("UICorner", t).CornerRadius = UDim.new(0, 5)
+	return gui
+end
+
+function World.prompt(anchor, action, object, callback, duration)
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText, prompt.ObjectText = action, object
+	prompt.MaxActivationDistance, prompt.HoldDuration = 10, duration or 0.35
+	prompt.GamepadKeyCode = Enum.KeyCode.ButtonY
+	prompt.RequiresLineOfSight, prompt.Parent = false, anchor
+	local accept = Util.limiter(2, 2)
+	prompt.Triggered:Connect(function(player)
+		if prompt.Enabled and player:GetAttribute("InRound") and accept(player) and Util.near(player, anchor.Position, 13) then callback(player, prompt) end
+	end)
+	return prompt
+end
+
+local function lamp(parent, pos, color)
+	part(parent, "Poste", Vector3.new(0.6, 16, 0.6), CFrame.new(pos + Vector3.new(0, 8, 0)), palette.concrete, Enum.Material.Metal)
+	local bulb = part(parent, "Luz", Vector3.new(3, 0.4, 3), CFrame.new(pos + Vector3.new(0, 16, 0)), color, Enum.Material.Neon)
+	local light = Instance.new("PointLight"); light.Color, light.Range, light.Brightness, light.Parent = color, 34, 1.5, bulb
+end
+
+local function furnishing(parent, kind, pos)
+	local cf = CFrame.new(pos)
+	if kind == "bench" then
+		part(parent, "Banco", Vector3.new(12, 0.7, 3), cf * CFrame.new(0, 2, 0), palette.wood, Enum.Material.WoodPlanks)
+		part(parent, "Encosto", Vector3.new(12, 3, 0.6), cf * CFrame.new(0, 3, -1.3), palette.wood, Enum.Material.WoodPlanks)
+		for _, x in { -5, 5 } do part(parent, "Pé", Vector3.new(0.6, 2, 2), cf * CFrame.new(x, 1, 0), palette.concrete, Enum.Material.Metal) end
+	elseif kind == "desk" then
+		part(parent, "Mesa", Vector3.new(10, 0.7, 5), cf * CFrame.new(0, 3, 0), palette.wood, Enum.Material.WoodPlanks)
+		for _, x in { -4, 4 } do part(parent, "Suporte", Vector3.new(0.7, 3, 4), cf * CFrame.new(x, 1.5, 0), palette.concrete) end
+		part(parent, "Terminal", Vector3.new(3, 2, 0.5), cf * CFrame.new(0, 4.3, -1), Color3.fromRGB(30, 85, 80), Enum.Material.Neon)
+	elseif kind == "bed" then
+		part(parent, "Maca", Vector3.new(5, 1, 9), cf * CFrame.new(0, 2.6, 0), Color3.fromRGB(170, 190, 180), Enum.Material.Fabric)
+		part(parent, "Base", Vector3.new(4, 2, 8), cf * CFrame.new(0, 1, 0), palette.concrete, Enum.Material.Metal)
+	end
+end
+
+local function building(name, center, width, depth, height, color, locked, price, callback)
+	local model = Instance.new("Model"); model.Name, model.Parent = name, World.Map
+	local cf = CFrame.new(center)
+	part(model, "Piso", Vector3.new(width, 0.4, depth), cf, Color3.fromRGB(92, 91, 83), Enum.Material.Slate)
+	-- Front wall has a real, 12-stud-wide entrance. Side windows have actual openings.
+	for _, s in { -1, 1 } do
+		part(model, "Fachada", Vector3.new((width - 12) / 2, height, 1.2), cf * CFrame.new(s * (width + 12) / 4, height / 2, depth / 2), color)
+		part(model, "JanelaBase", Vector3.new(1.2, 4, depth), cf * CFrame.new(s * width / 2, 2, 0), color)
+		part(model, "JanelaTopo", Vector3.new(1.2, height - 9, depth), cf * CFrame.new(s * width / 2, 9 + (height - 9) / 2, 0), color)
+		for z = -depth / 2, depth / 2, 14 do part(model, "Coluna", Vector3.new(1.4, 5, 2.5), cf * CFrame.new(s * width / 2, 6.5, z), color) end
+	end
+	part(model, "Portal", Vector3.new(12, height - 10, 1.2), cf * CFrame.new(0, 10 + (height - 10) / 2, depth / 2), color)
+	part(model, "ParedeFundo", Vector3.new(width, height, 1.2), cf * CFrame.new(0, height / 2, -depth / 2), color)
+	part(model, "Telhado", Vector3.new(width + 3, 1.2, depth + 3), cf * CFrame.new(0, height + 0.6, 0), Color3.fromRGB(36, 43, 46), Enum.Material.Slate)
+	local sign = part(model, "Placa", Vector3.new(math.min(width - 4, 30), 3, 0.7), cf * CFrame.new(0, 12, depth / 2 + 1), palette.concrete)
+	label(sign, string.upper(name), palette.glow)
+	local light = Instance.new("PointLight"); light.Range, light.Brightness, light.Color, light.Parent = 55, 1.3, Color3.fromRGB(220, 205, 160), sign
+	if locked then
+		local door = part(model, "Porta", Vector3.new(12, 10, 1), cf * CFrame.new(0, 5, depth / 2), palette.wood, Enum.Material.WoodPlanks)
+		local d = { part = door, cf = door.CFrame, open = false }
+		d.prompt = World.prompt(door, "Desbloquear • " .. price .. " moedas", name, function(player)
+			if d.open then return end
+			if callback(player, "Door", { Price = price, Name = name }) then
+				d.open, d.prompt.Enabled = true, false
+				door.CanCollide = false
+				TweenService:Create(door, TweenInfo.new(0.7), { CFrame = d.cf * CFrame.new(0, 11, 0), Transparency = 0.7 }):Play()
+			end
+		end)
+		table.insert(World.Doors, d)
+	end
+	return model
+end
+
+local function station(parent, pos, title, action, kind, arg, callback, color)
+	local p = part(parent, title, Vector3.new(4, 5, 3), CFrame.new(pos + Vector3.new(0, 2.5, 0)), color or palette.glow, Enum.Material.Metal)
+	part(parent, "Painel", Vector3.new(3.3, 1.7, 0.15), p.CFrame * CFrame.new(0, 0.8, 1.6), palette.glow, Enum.Material.Neon)
+	label(p, title)
+	World.prompt(p, action, title, function(player) callback(player, kind, arg) end)
+	return p
+end
+
+local function plane(parent, cf)
+	local m = Instance.new("Model"); m.Name, m.Parent = "Voo 813", parent
+	part(m, "Fuselagem", Vector3.new(10, 9, 50), cf, Color3.fromRGB(178, 183, 172), Enum.Material.Metal)
+	part(m, "Faixa", Vector3.new(10.1, 1.3, 45), cf * CFrame.new(0, 1, 0), Color3.fromRGB(41, 118, 114), Enum.Material.Metal)
+	part(m, "Asas", Vector3.new(68, 1, 13), cf * CFrame.new(0, -2, 1), Color3.fromRGB(117, 128, 134), Enum.Material.Metal)
+	part(m, "Cauda", Vector3.new(2, 17, 10), cf * CFrame.new(0, 7, 20), Color3.fromRGB(57, 105, 108), Enum.Material.Metal)
+	for _, x in { -19, 19 } do
+		local engine = part(m, "Motor", Vector3.new(6, 6, 12), cf * CFrame.new(x, -4, -2), palette.concrete, Enum.Material.Metal)
+		engine.Shape = Enum.PartType.Cylinder
+	end
+	for z = -18, 14, 6 do
+		for _, x in { -5.1, 5.1 } do part(m, "Janela", Vector3.new(0.15, 2, 2), cf * CFrame.new(x, 1.7, z), Color3.fromRGB(28, 46, 52), Enum.Material.Glass) end
+	end
+	return m
+end
+
+function World.build(callback)
+	local previous = workspace:FindFirstChild("ZumbiWorld"); if previous then previous:Destroy() end
+	World.Map = Instance.new("Folder"); World.Map.Name, World.Map.Parent = "ZumbiWorld", workspace
+	World.Enemies = Util.folder(workspace, "ZumbiEnemies")
+	World.Drops = Util.folder(workspace, "ZumbiDrops")
+	Lighting.ClockTime, Lighting.Brightness = 0.6, 2
+	Lighting.Ambient, Lighting.OutdoorAmbient = Color3.fromRGB(69, 85, 100), Color3.fromRGB(85, 100, 115)
+	Lighting.FogColor, Lighting.FogStart, Lighting.FogEnd = Color3.fromRGB(32, 53, 60), 120, 480
+	local atmosphere = Instance.new("Atmosphere"); atmosphere.Density, atmosphere.Haze, atmosphere.Color, atmosphere.Parent = 0.25, 1.5, Color3.fromRGB(141, 166, 163), Lighting
+	part(World.Map, "Terreno", Vector3.new(550, 4, 550), CFrame.new(0, -2, 0), Color3.fromRGB(45, 58, 48), Enum.Material.Grass)
+	for _, data in { { 0, 0, 28, 470 }, { 0, 55, 470, 26 }, { 0, -100, 470, 22 } } do
+		part(World.Map, "Asfalto", Vector3.new(data[3], 0.15, data[4]), CFrame.new(data[1], 0.05, data[2]), Color3.fromRGB(42, 46, 48), Enum.Material.Asphalt)
+	end
+	for z = -210, 210, 18 do part(World.Map, "Faixa", Vector3.new(0.6, 0.05, 7), CFrame.new(0, 0.16, z), Color3.fromRGB(180, 166, 112)) end
+	for _, x in { -260, 260 } do part(World.Map, "Limite", Vector3.new(5, 44, 530), CFrame.new(x, 20, 0), palette.concrete, Enum.Material.Rock) end
+	for _, z in { -260, 260 } do part(World.Map, "Limite", Vector3.new(530, 44, 5), CFrame.new(0, 20, z), palette.concrete, Enum.Material.Rock) end
+	for _, x in { -24, 24 } do for z = -200, 180, 80 do lamp(World.Map, Vector3.new(x, 0, z), Color3.fromRGB(200, 184, 134)) end end
+
+	local church = building("Igreja da Aurora", Vector3.new(-112, 0.3, -30), 64, 80, 26, Color3.fromRGB(102, 98, 85), true, 100, callback)
+	for _, x in { -17, 17 } do for z = -48, -5, 14 do furnishing(church, "bench", Vector3.new(-112 + x, 0.5, z)) end end
+	part(church, "Altar", Vector3.new(20, 3, 7), CFrame.new(-112, 1.8, -60), palette.concrete)
+	part(church, "Torre", Vector3.new(13, 24, 13), CFrame.new(-112, 38, -5), Color3.fromRGB(95, 92, 82))
+	part(church, "CruzV", Vector3.new(1.3, 10, 1.3), CFrame.new(-112, 55, -5), palette.glow, Enum.Material.Neon)
+	part(church, "CruzH", Vector3.new(7, 1.3, 1.3), CFrame.new(-112, 57, -5), palette.glow, Enum.Material.Neon)
+	station(church, Vector3.new(-88, 0.6, -55), "TITÃ • 320", "Obter buff", "Perk", "Juggernaut", callback, Color3.fromRGB(165, 65, 67))
+	station(church, Vector3.new(-136, 0.6, -55), "REANIMADOR • 90", "Comprar resgate para a partida", "RoundRevive", nil, callback)
+
+	local police = building("Delegacia", Vector3.new(110, 0.3, -28), 70, 70, 19, Color3.fromRGB(68, 88, 106), true, 130, callback)
+	for _, x in { 92, 125 } do furnishing(police, "desk", Vector3.new(x, 0.6, -20)) end
+	for x = 86, 112, 4 do part(police, "Cela", Vector3.new(0.4, 10, 0.4), CFrame.new(x, 5, -48), palette.concrete, Enum.Material.Metal) end
+	station(police, Vector3.new(135, 0.6, -50), "AR AURORA • 480", "Comprar / reabastecer", "Weapon", "Rifle", callback)
+	station(police, Vector3.new(82, 0.6, -50), "MÃOS RÁPIDAS • 240", "Obter buff", "Perk", "QuickHands", callback, Color3.fromRGB(100, 125, 190))
+
+	local hospital = building("Hospital", Vector3.new(128, 0.3, -165), 64, 62, 19, Color3.fromRGB(129, 141, 132), false, 0, callback)
+	for _, x in { 111, 145 } do for _, z in { -180, -155 } do furnishing(hospital, "bed", Vector3.new(x, 0.6, z)) end end
+	station(hospital, Vector3.new(128, 0.6, -188), "POSTO MÉDICO • 60", "Recuperar vida", "Heal", nil, callback, Color3.fromRGB(191, 77, 81))
+	local cross = part(hospital, "CruzHospital", Vector3.new(3, 9, 0.6), CFrame.new(128, 16, -132), Color3.fromRGB(255, 100, 100), Enum.Material.Neon)
+	part(hospital, "CruzHorizontal", Vector3.new(9, 3, 0.6), cross.CFrame, cross.Color, Enum.Material.Neon)
+
+	local garage = building("Oficina", Vector3.new(-128, 0.3, 103), 68, 55, 19, palette.brick, false, 0, callback)
+	station(garage, Vector3.new(-148, 0.6, 87), "APRIMORADOR • 280 / NÍVEL", "Aprimorar arma equipada", "Upgrade", nil, callback, Color3.fromRGB(183, 126, 47))
+	station(garage, Vector3.new(-110, 0.6, 87), "VESPA SMG • 220", "Comprar / reabastecer", "Weapon", "SMG", callback)
+	furnishing(garage, "desk", Vector3.new(-128, 0.6, 102))
+	local market = building("Mercado", Vector3.new(130, 0.3, 105), 65, 58, 18, palette.brick, false, 0, callback)
+	for _, x in { 112, 146 } do
+		for _, y in { 2, 4, 6 } do part(market, "Prateleira", Vector3.new(4, 0.5, 26), CFrame.new(x, y, 100), palette.wood, Enum.Material.WoodPlanks) end
+	end
+	station(market, Vector3.new(130, 0.6, 87), "CORREDOR • 200", "Obter buff", "Perk", "Runner", callback, Color3.fromRGB(60, 166, 151))
+	station(market, Vector3.new(130, 0.6, 116), "ESCOPETA • 360", "Comprar / reabastecer", "Weapon", "Shotgun", callback)
+	local depot = building("Central de energia", Vector3.new(0, 0.3, -183), 56, 52, 18, palette.concrete, true, 170, callback)
+	World.PowerPanel = station(depot, Vector3.new(0, 0.6, -197), "GERADOR • 180", "Ligar energia da cidade", "Power", nil, callback, Color3.fromRGB(207, 161, 50))
+	for _, x in { -17, 17 } do part(depot, "Gerador", Vector3.new(9, 9, 17), CFrame.new(x, 4.8, -183), palette.concrete, Enum.Material.Metal) end
+	station(World.Map, Vector3.new(27, 0.5, -18), "ARMADILHA • 80", "Descarga elétrica • 12s", "Trap", nil, callback)
+	station(World.Map, Vector3.new(-29, 0.5, 34), "RESGATE GRÁTIS • 1 / HORDA", "Pistola / SMG / escopeta / AR • 25% cada", "Mystery", nil, callback, Color3.fromRGB(125, 82, 153))
+
+	-- Cemetery: gates, aisles, tombstones, and a small enterable crypt.
+	local cemetery = Instance.new("Folder"); cemetery.Name, cemetery.Parent = "Cemitério", World.Map
+	for _, x in { -175, -70 } do part(cemetery, "Muro", Vector3.new(2, 5, 92), CFrame.new(x, 2.5, -176), palette.concrete) end
+	part(cemetery, "Muro", Vector3.new(107, 5, 2), CFrame.new(-122, 2.5, -222), palette.concrete)
+	for _, x in { -160, -137, -110, -86 } do
+		for _, z in { -200, -177, -151 } do
+			part(cemetery, "Sepultura", Vector3.new(5, 0.4, 9), CFrame.new(x, 0.3, z), Color3.fromRGB(69, 66, 54), Enum.Material.Ground)
+			local stone = part(cemetery, "Lápide", Vector3.new(4, 5, 0.8), CFrame.new(x, 2.5, z - 4), Color3.fromRGB(118, 126, 117), Enum.Material.Slate)
+			part(cemetery, "Inscrição", Vector3.new(2.6, 0.3, 0.1), stone.CFrame * CFrame.new(0, 0.5, 0.45), palette.concrete)
+		end
+	end
+	local crypt = building("Cripta", Vector3.new(-202, 0.3, -177), 30, 42, 13, palette.concrete, false, 0, callback)
+	station(crypt, Vector3.new(-202, 0.6, -190), "MUNIÇÃO • 45", "Reabastecer arma equipada", "Ammo", nil, callback)
+	local gate = part(cemetery, "Entrada", Vector3.new(18, 1, 1), CFrame.new(-123, 12, -129), palette.concrete)
+	label(gate, "CEMITÉRIO • NÃO OLHE PARA TRÁS")
+
+	World.Wreck = plane(World.Map, CFrame.new(-19, 5, 165) * CFrame.Angles(0, math.rad(22), math.rad(7)))
+	local fire = Instance.new("Fire"); fire.Size, fire.Heat, fire.Parent = 14, 9, World.Wreck.Fuselagem
+	local smoke = Instance.new("Smoke"); smoke.Size, smoke.Opacity, smoke.RiseVelocity, smoke.Parent = 15, 0.35, 10, World.Wreck.Fuselagem
+	for _ = 1, 16 do
+		part(World.Map, "Destroço", Vector3.new(rng:NextNumber(1, 4), 0.6, rng:NextNumber(2, 8)), CFrame.new(rng:NextNumber(-70, 40), 0.7, rng:NextNumber(140, 205)) * CFrame.Angles(0, rng:NextNumber(0, 6), 0), palette.concrete, Enum.Material.Metal)
+	end
+	local helipad = part(World.Map, "ZonaDeExtração", Vector3.new(25, 0.25, 25), CFrame.new(World.Extraction), Color3.fromRGB(45, 85, 80), Enum.Material.Metal)
+	label(helipad, "EXTRAÇÃO\nSobreviva às 15 hordas", palette.glow)
+	World.Helipad = helipad
+	local spawn = Instance.new("SpawnLocation"); spawn.Name, spawn.Size, spawn.CFrame = "Acampamento", Vector3.new(12, 0.3, 12), CFrame.new(0, 0.5, 80)
+	spawn.Anchored, spawn.Neutral, spawn.Duration, spawn.Transparency, spawn.Parent = true, true, 0, 1, World.Map
+	station(World.Map, Vector3.new(20, 0.5, 82), "PISTOLA • GRÁTIS / RECARGA 35", "Comprar / reabastecer", "Weapon", "Pistol", callback)
+
+	for _, pos in { Vector3.new(-128, 1.6, -14), Vector3.new(120, 1.6, -12), Vector3.new(140, 1.6, -180), Vector3.new(-155, 1.6, -170), Vector3.new(-120, 1.6, 112), Vector3.new(147, 1.6, 115), Vector3.new(40, 1.6, 170), Vector3.new(-205, 1.6, -170), Vector3.new(10, 1.6, -175), Vector3.new(48, 1.6, -88) } do
+		local box = part(World.Map, "Suprimentos", Vector3.new(4, 3, 3), CFrame.new(pos), Color3.fromRGB(119, 131, 65), Enum.Material.Metal)
+		local item = { part = box, used = false }
+		item.prompt = World.prompt(box, "Vasculhar", "Suprimentos • 1 uso por horda", function(player)
+			if item.used then return end
+			if callback(player, "Loot", nil) then
+				item.used, item.prompt.Enabled, box.Color = true, false, palette.concrete
+			end
+		end, 0.8)
+		table.insert(World.Loot, item)
+	end
+
+	-- A repair interaction rewards exploration without supplying infinite coins.
+	for _, pos in { Vector3.new(-80, 3, -29), Vector3.new(75, 3, -25), Vector3.new(162, 3, 105) } do
+		local plank = part(World.Map, "Barricada", Vector3.new(1.5, 1.2, 12), CFrame.new(pos) * CFrame.Angles(math.rad(12), 0, 0), palette.wood, Enum.Material.WoodPlanks)
+		World.prompt(plank, "Reparar • +20 moedas", "Barricada • uma vez por horda / jogador", function(player) callback(player, "Repair", plank) end, 1.3)
+	end
+	for i = 1, 36 do
+		local angle = i * math.pi * 2 / 36
+		local pos = Vector3.new(math.cos(angle) * 235, 0, math.sin(angle) * 235)
+		part(World.Map, "Tronco", Vector3.new(3, 15, 3), CFrame.new(pos + Vector3.new(0, 7.5, 0)), palette.wood, Enum.Material.Wood)
+		local crown = part(World.Map, "Copa", Vector3.new(16, 19, 16), CFrame.new(pos + Vector3.new(0, 19, 0)), Color3.fromRGB(31, 53, 46), Enum.Material.Grass)
+		crown.Shape = Enum.PartType.Ball
+	end
+	World.SpawnPoints = {}
+	for _, p in { { -225, 30 }, { 220, 25 }, { -220, 145 }, { 215, 160 }, { -45, -240 }, { 45, -240 }, { 215, -95 }, { -220, -80 }, { 100, 220 }, { -110, 220 } } do
+		table.insert(World.SpawnPoints, Vector3.new(p[1], 4, p[2]))
+	end
+end
+
+function World.resetLoot()
+	for _, item in World.Loot do item.used, item.prompt.Enabled, item.part.Color = false, true, Color3.fromRGB(119, 131, 65) end
+end
+
+function World.reset()
+	World.Powered = false
+	World.PowerPanel.Color = Color3.fromRGB(207, 161, 50)
+	World.Helipad.Color = Color3.fromRGB(45, 85, 80)
+	if World.Helicopter then World.Helicopter:Destroy(); World.Helicopter = nil end
+	for _, d in World.Doors do
+		d.open, d.prompt.Enabled, d.part.CanCollide, d.part.Transparency, d.part.CFrame = false, true, true, 0, d.cf
+	end
+	World.resetLoot()
+	World.Drops:ClearAllChildren()
+end
+
+function World.crash()
+	local cf = CFrame.new(-19, 5, 165) * CFrame.Angles(0, math.rad(22), math.rad(7))
+	local flying = plane(World.Map, cf + Vector3.new(-145, 100, 90))
+	for _, p in flying:GetChildren() do if p:IsA("BasePart") then p.CanCollide = false end end
+	local value = Instance.new("CFrameValue"); value.Value = flying:GetPivot()
+	local connection = value.Changed:Connect(function(pivot) flying:PivotTo(pivot) end)
+	TweenService:Create(value, TweenInfo.new(4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Value = cf }):Play()
+	task.delay(4, function()
+		connection:Disconnect(); value:Destroy(); flying:Destroy()
+		local explosion = Instance.new("Explosion"); explosion.Position, explosion.BlastRadius, explosion.BlastPressure = cf.Position, 22, 0
+		explosion.DestroyJointRadiusPercent, explosion.Parent = 0, workspace
+	end)
+end
+
+function World.extraction()
+	World.Helipad.Color = Color3.fromRGB(75, 255, 175)
+	local heli = Instance.new("Model"); heli.Name, heli.Parent = "Resgate", World.Map
+	World.Helicopter = heli
+	part(heli, "Cabine", Vector3.new(9, 7, 16), CFrame.new(0, 9, 132), Color3.fromRGB(42, 74, 65), Enum.Material.Metal)
+	part(heli, "Vidro", Vector3.new(7, 4, 0.5), CFrame.new(0, 9, 123.8), Color3.fromRGB(78, 160, 167), Enum.Material.Glass)
+	part(heli, "Cauda", Vector3.new(3, 3, 18), CFrame.new(0, 10, 147), palette.concrete, Enum.Material.Metal)
+	local rotor = part(heli, "Rotor", Vector3.new(37, 0.3, 2), CFrame.new(0, 14, 132), palette.concrete, Enum.Material.Metal)
+	rotor.CanCollide = false
+	for _, x in { -6, 6 } do part(heli, "Patim", Vector3.new(0.6, 0.6, 20), CFrame.new(x, 5, 132), palette.concrete, Enum.Material.Metal) end
+	task.spawn(function()
+		while heli.Parent do rotor.CFrame *= CFrame.Angles(0, 0.65, 0); task.wait(0.04) end
+	end)
+end
+
+function World.drop(position, callback)
+	local p = part(World.Drops, "Munição caída", Vector3.new(2, 1.3, 2), CFrame.new(position.X, 1, position.Z), palette.glow, Enum.Material.Neon)
+	World.prompt(p, "Coletar munição", "Suprimentos de infectado", function(player)
+		if not p.Parent then return end
+		p:Destroy(); callback(player)
+	end, 0)
+	Debris:AddItem(p, 35)
+end
+
+return World
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX16">
+        <Properties>
+          <string name="Name">ZombieService</string>
+          <ProtectedString name="Source">local PathfindingService = game:GetService("PathfindingService")
+local PhysicsService = game:GetService("PhysicsService")
+local Debris = game:GetService("Debris")
+local Util = require(script.Parent.Util)
+local World = require(script.Parent.World)
+
+local Zombies = { Active = {}, OnKill = nil, Serial = 0, Generation = 0 }
+local rng = Random.new()
+
+local function body(model, name, size, cf, color)
+	local p = Instance.new("Part")
+	p.Name, p.Size, p.CFrame, p.Color, p.Material = name, size, cf, color, Enum.Material.SmoothPlastic
+	p.Anchored, p.CanCollide, p.CanTouch = false, false, false
+	p.CollisionGroup = "Infected"
+	p.Parent = model
+	return p
+end
+
+local function joint(parent, name, a, b, c0, c1)
+	local motor = Instance.new("Motor6D")
+	motor.Name, motor.Part0, motor.Part1, motor.C0, motor.C1, motor.Parent = name, a, b, c0, c1, parent
+	return motor
+end
+
+function Zombies.init(onKill)
+	Zombies.OnKill = onKill
+	pcall(function() PhysicsService:RegisterCollisionGroup("Infected") end)
+	pcall(function() PhysicsService:RegisterCollisionGroup("Survivors") end)
+	PhysicsService:CollisionGroupSetCollidable("Infected", "Infected", false)
+	PhysicsService:CollisionGroupSetCollidable("Survivors", "Survivors", false)
+	-- Contact still collides with the map; zombie damage is evaluated on the server.
+	PhysicsService:CollisionGroupSetCollidable("Infected", "Survivors", false)
+	task.spawn(function()
+		while true do
+			for model, z in Zombies.Active do
+				if model.Parent and z.hum.Health &gt; 0 then
+					Zombies.step(z)
+				end
+			end
+			task.wait(0.25)
+		end
+	end)
+end
+
+function Zombies.count()
+	local count = 0
+	for _ in Zombies.Active do count += 1 end
+	return count
+end
+
+function Zombies.clear()
+	Zombies.Generation += 1
+	for model in Zombies.Active do model:Destroy() end
+	table.clear(Zombies.Active)
+	World.Enemies:ClearAllChildren()
+end
+
+function Zombies.spawn(settings, boss)
+	local living = Util.livingPlayers()
+	if #living == 0 then return end
+	local candidates = {}
+	for _, pos in World.SpawnPoints do
+		local distance = math.huge
+		for _, player in living do
+			local _, _, root = Util.alive(player)
+			distance = math.min(distance, (root.Position - pos).Magnitude)
+		end
+		if distance &gt; 55 then table.insert(candidates, pos) end
+	end
+	local position = if #candidates &gt; 0 then candidates[rng:NextInteger(1, #candidates)] else World.SpawnPoints[rng:NextInteger(1, #World.SpawnPoints)]
+	position += Vector3.new(rng:NextNumber(-5, 5), 0, rng:NextNumber(-5, 5))
+	local fast = not boss and rng:NextNumber() &lt; 0.20
+	local color = if boss then Color3.fromRGB(145, 60, 68) elseif fast then Color3.fromRGB(154, 146, 60) else Color3.fromRGB(88, 129, 89)
+	local model = Instance.new("Model"); model.Name = if boss then "O Comandante" elseif fast then "Corredor infectado" else "Infectado"
+	model:SetAttribute("Zombie", true)
+	local cf = CFrame.new(position)
+	local root = body(model, "HumanoidRootPart", Vector3.new(2, 2, 1), cf, color)
+	root.Transparency, root.CanCollide = 1, true
+	local torso = body(model, "Torso", Vector3.new(2, 2, 1), cf, Color3.fromRGB(47, 65, 60))
+	local head = body(model, "Head", Vector3.new(2, 1, 1), cf * CFrame.new(0, 1.5, 0), color)
+	local leftArm = body(model, "Left Arm", Vector3.new(1, 2, 1), cf * CFrame.new(-1.5, 0, 0), color)
+	local rightArm = body(model, "Right Arm", Vector3.new(1, 2, 1), cf * CFrame.new(1.5, 0, 0), color)
+	local leftLeg = body(model, "Left Leg", Vector3.new(1, 2, 1), cf * CFrame.new(-0.5, -2, 0), Color3.fromRGB(40, 44, 49))
+	local rightLeg = body(model, "Right Leg", Vector3.new(1, 2, 1), cf * CFrame.new(0.5, -2, 0), Color3.fromRGB(40, 44, 49))
+	joint(root, "RootJoint", root, torso, CFrame.identity, CFrame.identity)
+	joint(torso, "Neck", torso, head, CFrame.new(0, 1, 0), CFrame.new(0, -0.5, 0))
+	joint(torso, "Left Shoulder", torso, leftArm, CFrame.new(-1, 0.5, 0), CFrame.new(0.5, 0.5, 0))
+	joint(torso, "Right Shoulder", torso, rightArm, CFrame.new(1, 0.5, 0), CFrame.new(-0.5, 0.5, 0))
+	joint(torso, "Left Hip", torso, leftLeg, CFrame.new(-0.5, -1, 0), CFrame.new(0, 1, 0))
+	joint(torso, "Right Hip", torso, rightLeg, CFrame.new(0.5, -1, 0), CFrame.new(0, 1, 0))
+	for _, x in { -0.5, 0.5 } do
+		local eye = body(model, "Olho", Vector3.new(0.25, 0.18, 0.08), cf * CFrame.new(x, 1.65, -0.55), Color3.fromRGB(255, 91, 54))
+		eye.Material = Enum.Material.Neon
+		local weld = Instance.new("WeldConstraint"); weld.Part0, weld.Part1, weld.Parent = head, eye, eye
+	end
+	local hum = Instance.new("Humanoid")
+	hum.MaxHealth = math.floor(settings.Health * (if boss then 7 + #living else 1))
+	hum.Health, hum.WalkSpeed, hum.BreakJointsOnDeath = hum.MaxHealth, settings.Speed * (if fast then 1.35 elseif boss then 0.8 else 1), false
+	hum.DisplayDistanceType, hum.Parent = Enum.HumanoidDisplayDistanceType.None, model
+	model.PrimaryPart, model.Parent = root, World.Enemies
+	if boss then model:ScaleTo(1.6) end
+	root:SetNetworkOwner(nil)
+	local gui = Instance.new("BillboardGui"); gui.Size, gui.StudsOffset, gui.MaxDistance, gui.Parent = UDim2.fromOffset(if boss then 160 else 70, 26), Vector3.new(0, if boss then 5 else 3.5, 0), 80, head
+	local text = Instance.new("TextLabel"); text.Size, text.BackgroundTransparency, text.TextColor3, text.TextSize, text.Font, text.Parent = UDim2.fromScale(1, 1), 0.45, Color3.fromRGB(255, 190, 148), 12, Enum.Font.GothamBold, gui
+	local function healthText() text.Text = (if boss then "COMANDANTE " else "") .. math.ceil(hum.Health) end
+	healthText(); hum.HealthChanged:Connect(healthText)
+	local z = { model = model, hum = hum, root = root, damage = settings.Damage * (if boss then 1.6 else 1),
+		boss = boss, hits = {}, lastAttack = 0, lastPath = -rng:NextNumber(0, 3), pathing = false,
+		born = os.clock(), lastPosition = position, lastProgress = os.clock(), waypoints = {}, waypoint = 1 }
+	Zombies.Active[model] = z
+	hum.Died:Connect(function()
+		if not Zombies.Active[model] then return end
+		Zombies.Active[model] = nil
+		root.CanCollide = false
+		for _, p in model:GetChildren() do if p:IsA("BasePart") then p.CanCollide = false; p.Transparency = 0.6 end end
+		if Zombies.OnKill then Zombies.OnKill(z) end
+		Debris:AddItem(model, 1)
+	end)
+	return model
+end
+
+function Zombies.damage(model, amount, player)
+	local z = Zombies.Active[model]
+	if not z or z.hum.Health &lt;= 0 then return false end
+	if player then
+		z.hits[player] = (z.hits[player] or 0) + math.min(amount, z.hum.Health)
+		z.killer = player
+	end
+	z.hum:TakeDamage(amount)
+	return true
+end
+
+function Zombies.step(z)
+	local now = os.clock()
+	local torso = z.model:FindFirstChild("Torso")
+	if torso then
+		local scale = if z.boss then 1.6 else 1
+		local stride = math.sin(now * (if z.boss then 5 else 8)) * 0.4
+		torso["Left Shoulder"].C0 = CFrame.new(-scale, 0.5 * scale, 0) * CFrame.Angles(1.1 + stride * 0.2, 0, -0.12)
+		torso["Right Shoulder"].C0 = CFrame.new(scale, 0.5 * scale, 0) * CFrame.Angles(1.1 - stride * 0.2, 0, 0.12)
+		torso["Left Hip"].C0 = CFrame.new(-0.5 * scale, -scale, 0) * CFrame.Angles(stride, 0, 0)
+		torso["Right Hip"].C0 = CFrame.new(0.5 * scale, -scale, 0) * CFrame.Angles(-stride, 0, 0)
+	end
+	local target, distance = nil, math.huge
+	for _, player in Util.livingPlayers() do
+		local _, _, root = Util.alive(player)
+		local d = (root.Position - z.root.Position).Magnitude
+		if d &lt; distance then target, distance = player, d end
+	end
+	if not target then return end
+	local _, hum, root = Util.alive(target)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { World.Enemies, World.Drops }
+	local obstacle = workspace:Raycast(z.root.Position, root.Position - z.root.Position, params)
+	local visible = not obstacle or obstacle.Instance:IsDescendantOf(target.Character)
+	if distance &lt; (if z.boss then 7 else 4.8) and visible and now - z.lastAttack &gt; 1.1 then
+		z.lastAttack = now
+		if (target:GetAttribute("InvulnerableUntil") or 0) &lt; workspace:GetServerTimeNow() then hum:TakeDamage(z.damage) end
+	end
+	if visible then
+		z.hum:MoveTo(root.Position)
+		table.clear(z.waypoints)
+	elseif not z.pathing and now - z.lastPath &gt; 2.8 then
+		z.lastPath, z.pathing = now, true
+		local destination = root.Position
+		local generation = Zombies.Generation
+		task.spawn(function()
+			local path = PathfindingService:CreatePath({ AgentRadius = if z.boss then 2.8 else 2, AgentHeight = if z.boss then 8 else 5, AgentCanJump = true, WaypointSpacing = 5 })
+			local ok = pcall(function() path:ComputeAsync(z.root.Position, destination) end)
+			if generation == Zombies.Generation and z.model.Parent and ok and path.Status == Enum.PathStatus.Success then
+				z.waypoints, z.waypoint = path:GetWaypoints(), 2
+			end
+			path:Destroy(); z.pathing = false
+		end)
+	end
+	if not visible then
+		local point = z.waypoints[z.waypoint]
+		if point then
+			if (point.Position - z.root.Position).Magnitude &lt; 4 then z.waypoint += 1; point = z.waypoints[z.waypoint] end
+			if point then
+				if point.Action == Enum.PathWaypointAction.Jump then z.hum.Jump = true end
+				z.hum:MoveTo(point.Position)
+			end
+		else z.hum:MoveTo(root.Position) end
+	end
+	if (z.root.Position - z.lastPosition).Magnitude &gt; 3 then z.lastPosition, z.lastProgress = z.root.Position, now end
+	if now - z.lastProgress &gt; 7 then z.hum.Jump = true end
+	-- Avoid unwinnable waves when navigation fails. Despawn without kill rewards.
+	if now - z.lastProgress &gt; 28 or z.root.Position.Y &lt; -25 then
+		Zombies.Active[z.model] = nil
+		z.model:Destroy()
+	end
+end
+
+return Zombies
+</ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="RBX17">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+      <float name="CameraMaxZoomDistance">18</float>
+      <float name="CameraMinZoomDistance">0.5</float>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="RBX18">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="LocalScript" referent="RBX19">
+        <Properties>
+          <string name="Name">ZumbiClient</string>
+          <ProtectedString name="Source">local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
+local RunService = game:GetService("RunService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local SocialService = game:GetService("SocialService")
+local GuiService = game:GetService("GuiService")
+local Debris = game:GetService("Debris")
+
+local player = Players.LocalPlayer
+local Balance = require(ReplicatedStorage:WaitForChild("ZumbiShared"):WaitForChild("Balance"))
+local net = ReplicatedStorage:WaitForChild("ZumbiNetwork")
+local state = ReplicatedStorage:WaitForChild("ZumbiState")
+local effects = workspace:FindFirstChild("ZumbiLocalEffects") or Instance.new("Folder")
+effects.Name, effects.Parent = "ZumbiLocalEffects", workspace
+
+local colors = { bg = Color3.fromRGB(12, 20, 25), panel = Color3.fromRGB(20, 31, 38), line = Color3.fromRGB(52, 76, 82),
+	text = Color3.fromRGB(237, 237, 223), sub = Color3.fromRGB(158, 183, 185), teal = Color3.fromRGB(92, 234, 201),
+	gold = Color3.fromRGB(255, 202, 114), red = Color3.fromRGB(255, 111, 104) }
+local touch = UserInputService.TouchEnabled
+local gui = Instance.new("ScreenGui")
+gui.Name, gui.ResetOnSpawn, gui.DisplayOrder = "ZumbiHUD", false, 10
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local function rounded(instance, radius)
+	local corner = Instance.new("UICorner"); corner.CornerRadius, corner.Parent = UDim.new(0, radius or 9), instance
+end
+
+local function frame(parent, size, pos, color)
+	local f = Instance.new("Frame")
+	f.Size, f.Position, f.BackgroundColor3, f.BackgroundTransparency = size, pos, color or colors.panel, 0.08
+	f.BorderSizePixel, f.Parent = 0, parent
+	rounded(f)
+	return f
+end
+
+local function text(parent, value, size, pos, width, color)
+	local label = Instance.new("TextLabel")
+	label.Size, label.Position = UDim2.new(1, -(width or 24), 0, size + 8), pos or UDim2.fromOffset(12, 8)
+	label.BackgroundTransparency, label.Text, label.TextColor3 = 1, value, color or colors.text
+	label.TextSize, label.Font, label.TextXAlignment = size, Enum.Font.GothamMedium, Enum.TextXAlignment.Left
+	label.Parent = parent
+	return label
+end
+
+local function button(parent, caption, size, pos, callback, color)
+	local b = Instance.new("TextButton")
+	b.Size, b.Position, b.Text = size, pos, caption
+	b.BackgroundColor3, b.TextColor3, b.Font, b.TextSize = color or colors.line, colors.text, Enum.Font.GothamBold, 13
+	b.BorderSizePixel, b.AutoButtonColor, b.Parent = 0, true, parent
+	rounded(b, 7)
+	if callback then b.Activated:Connect(callback) end
+	return b
+end
+
+local function stroke(object, color)
+	local s = Instance.new("UIStroke"); s.Color, s.Transparency, s.Parent = color or colors.line, 0.25, object
+	return s
+end
+
+local brand = text(gui, "Z U M B I", 25, UDim2.fromOffset(20, 14), 24, colors.text)
+brand.Size = UDim2.fromOffset(210, 34)
+local subtitle = text(gui, "Ú L T I M O  V O O  /  8 1 3", 10, UDim2.fromOffset(22, 50), 24, colors.teal)
+subtitle.Size = UDim2.fromOffset(260, 22)
+
+local wavePanel = frame(gui, UDim2.fromOffset(360, 85), UDim2.new(0.5, 0, 0, 12))
+wavePanel.AnchorPoint = Vector2.new(0.5, 0); stroke(wavePanel)
+local waveLabel = text(wavePanel, "ESTABELECENDO CONTATO", 17, UDim2.fromOffset(15, 8), 24, colors.teal)
+local waveDetail = text(wavePanel, "Carregando sobrevivente…", 12, UDim2.fromOffset(15, 38), 24, colors.sub)
+local timeLabel = text(wavePanel, "", 24, UDim2.new(1, -78, 0, 11), 0, colors.gold)
+timeLabel.Size, timeLabel.TextXAlignment = UDim2.fromOffset(64, 34), Enum.TextXAlignment.Right
+local progress = frame(wavePanel, UDim2.new(1, -30, 0, 3), UDim2.new(0, 15, 1, -12), colors.line)
+local progressFill = frame(progress, UDim2.fromScale(1, 1), UDim2.fromOffset(0, 0), colors.teal)
+
+local wallet = frame(gui, UDim2.fromOffset(198, 76), UDim2.new(1, -18, 0, 16))
+wallet.AnchorPoint = Vector2.new(1, 0)
+local coinsLabel = text(wallet, "◈ 0", 22, UDim2.fromOffset(12, 7), 20, colors.gold)
+local recordLabel = text(wallet, "RECORDE 0   /   0 VITÓRIAS", 10, UDim2.fromOffset(12, 43), 20, colors.sub)
+
+local survival = frame(gui, UDim2.fromOffset(250, 100), UDim2.new(0, 18, 1, -22))
+survival.AnchorPoint = Vector2.new(0, 1)
+local healthLabel = text(survival, "SOBREVIVENTE", 12, UDim2.fromOffset(12, 7), 24, colors.sub)
+local hpBar = frame(survival, UDim2.new(1, -24, 0, 9), UDim2.fromOffset(12, 34), colors.line)
+local hpFill = frame(hpBar, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), colors.teal)
+local staminaBar = frame(survival, UDim2.new(1, -24, 0, 3), UDim2.fromOffset(12, 51), colors.line)
+local staminaFill = frame(staminaBar, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), colors.gold)
+local buffsLabel = text(survival, "SEM BUFFS • BUSQUE A ENERGIA", 10, UDim2.fromOffset(12, 66), 24, colors.sub)
+
+local gunPanel = frame(gui, UDim2.fromOffset(240, 100), UDim2.new(1, -18, 1, -22))
+gunPanel.AnchorPoint = Vector2.new(1, 1)
+local gunName = text(gunPanel, "EQUIPE SUA ARMA", 12, UDim2.fromOffset(14, 6), 24, colors.sub)
+local ammoLabel = text(gunPanel, "— / —", 30, UDim2.fromOffset(14, 27), 24)
+local reloadLabel = text(gunPanel, if touch then "TOQUE PARA RECARREGAR" else "R / X RECARREGAR  •  1–4 ARMAS", 10, UDim2.fromOffset(14, 74), 24, colors.teal)
+
+local objective = text(gui, "", 13, UDim2.new(0.5, 0, 1, -49), 0, colors.teal)
+objective.Size, objective.AnchorPoint, objective.TextXAlignment = UDim2.fromOffset(400, 26), Vector2.new(0.5, 1), Enum.TextXAlignment.Center
+local phaseHint = text(gui, "", 11, UDim2.new(0.5, 0, 1, -23), 0, colors.sub)
+phaseHint.Size, phaseHint.AnchorPoint, phaseHint.TextXAlignment = UDim2.fromOffset(400, 24), Vector2.new(0.5, 1), Enum.TextXAlignment.Center
+
+local crosshair = Instance.new("Frame"); crosshair.Size, crosshair.BackgroundTransparency, crosshair.Parent = UDim2.fromOffset(24, 24), 1, gui
+crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
+for _, rect in { { 10, 0, 2, 7 }, { 10, 17, 2, 7 }, { 0, 10, 7, 2 }, { 17, 10, 7, 2 } } do
+	frame(crosshair, UDim2.fromOffset(rect[3], rect[4]), UDim2.fromOffset(rect[1], rect[2]), colors.text)
+end
+local hitmarker = text(crosshair, "×", 40, UDim2.fromOffset(-10, -17), 0, colors.gold)
+hitmarker.Size, hitmarker.Visible = UDim2.fromOffset(44, 48), false
+local killLabel = text(gui, "", 15, UDim2.new(0.5, 0, 0.62, 0), 0, colors.gold)
+killLabel.Size, killLabel.AnchorPoint, killLabel.TextXAlignment = UDim2.fromOffset(370, 30), Vector2.new(0.5, 0), Enum.TextXAlignment.Center
+
+local toastHolder = frame(gui, UDim2.fromOffset(430, 54), UDim2.new(0.5, 0, 0, 156), colors.bg)
+toastHolder.ZIndex = 40
+toastHolder.AnchorPoint, toastHolder.Visible = Vector2.new(0.5, 0), false
+local toastText = text(toastHolder, "", 13, UDim2.fromOffset(14, 4), 28)
+toastText.Size, toastText.TextWrapped = UDim2.new(1, -28, 1, -8), true
+local toastSerial = 0
+local function toast(message, good)
+	toastSerial += 1
+	local serial = toastSerial
+	toastText.Text, toastText.TextColor3, toastHolder.Visible = message, if good then colors.teal else colors.gold, true
+	task.delay(4, function() if toastSerial == serial then toastHolder.Visible = false end end)
+end
+
+local banner = text(gui, "", 16, UDim2.new(0.5, 0, 0, 110), 0, colors.gold)
+banner.Size, banner.AnchorPoint, banner.TextWrapped, banner.TextXAlignment = UDim2.fromOffset(660, 43), Vector2.new(0.5, 0), true, Enum.TextXAlignment.Center
+local bannerSerial = 0
+local function announce(message)
+	bannerSerial += 1
+	local serial = bannerSerial
+	banner.Text = message
+	task.delay(7, function() if serial == bannerSerial then banner.Text = "" end end)
+end
+
+-- Shop is an explicit player action. No purchase dialogs on death, login or countdowns.
+local shade = frame(gui, UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), Color3.new(0, 0, 0))
+shade.ZIndex = 20
+shade.BackgroundTransparency, shade.Visible, shade.Active = 0.25, false, true
+local modal = frame(shade, UDim2.fromOffset(780, 530), UDim2.fromScale(0.5, 0.5), colors.bg)
+modal.AnchorPoint = Vector2.new(0.5, 0.5); stroke(modal, colors.teal)
+local modalScale = Instance.new("UIScale", modal)
+local modalTitle = text(modal, "ARSENAL DO SOBREVIVENTE", 23, UDim2.fromOffset(24, 17), 90)
+local modalSub = text(modal, "Acabamentos permanentes • equipe em qualquer arma", 12, UDim2.fromOffset(24, 53), 48, colors.sub)
+button(modal, "FECHAR  ×", UDim2.fromOffset(100, 32), UDim2.new(1, -122, 0, 20), function() shade.Visible = false end)
+local tabs = frame(modal, UDim2.new(1, -48, 0, 42), UDim2.fromOffset(24, 88), colors.panel)
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size, scroll.Position, scroll.BackgroundTransparency = UDim2.new(1, -48, 1, -153), UDim2.fromOffset(24, 142), 1
+scroll.BorderSizePixel, scroll.ScrollBarThickness, scroll.AutomaticCanvasSize, scroll.CanvasSize = 0, 4, Enum.AutomaticSize.Y, UDim2.fromOffset(0, 0)
+scroll.Parent = modal
+local listLayout = Instance.new("UIListLayout"); listLayout.Padding, listLayout.Parent = UDim.new(0, 10), scroll
+local catalog, currentTab = {}, "Cosmetics"
+local marker, markerPos
+local firing, semiautoFired, nextShot = false, false, 0
+local renderMenu
+
+local function clearList()
+	for _, child in scroll:GetChildren() do if child:IsA("GuiObject") then child:Destroy() end end
+	scroll.CanvasPosition = Vector2.zero
+end
+
+local function card(title, detail, caption, callback, enabled, accent)
+	local c = frame(scroll, UDim2.new(1, -8, 0, 90), UDim2.fromOffset(0, 0))
+	local heading = text(c, title, 17, UDim2.fromOffset(16, 10), 240, accent or colors.text)
+	local body = text(c, detail, 12, UDim2.fromOffset(16, 37), 235, colors.sub)
+	body.Size, body.TextWrapped = UDim2.new(1, -240, 0, 42), true
+	local buyButton = button(c, caption, UDim2.fromOffset(190, 42), UDim2.new(1, -207, 0, 24), if enabled then callback else nil, if enabled then colors.line else colors.panel)
+	buyButton.AutoButtonColor, buyButton.TextColor3 = enabled, if enabled then colors.teal else colors.sub
+	return heading
+end
+
+local function setWaypoint(position, name)
+	if marker then marker:Destroy() end
+	marker = Instance.new("Part")
+	marker.Name, marker.Anchored, marker.CanCollide, marker.CanQuery, marker.CanTouch, marker.Transparency = "ObjetivoLocal", true, false, false, false, 1
+	marker.Size, marker.Position, marker.Parent = Vector3.one, position + Vector3.new(0, 14, 0), effects
+	local bill = Instance.new("BillboardGui"); bill.Size, bill.AlwaysOnTop, bill.Parent = UDim2.fromOffset(170, 55), true, marker
+	local label = text(bill, "▼ " .. name, 14, UDim2.fromOffset(0, 0), 0, colors.teal)
+	label.Size, label.TextXAlignment = UDim2.fromScale(1, 1), Enum.TextXAlignment.Center
+	markerPos = position
+	shade.Visible = false
+end
+
+local destinations = {
+	{ "IGREJA", "Titã • resgate por moedas • acesso 100", Vector3.new(-112, 1, -30) },
+	{ "DELEGACIA", "AR Aurora • mãos rápidas • acesso 130", Vector3.new(110, 1, -28) },
+	{ "CENTRAL DE ENERGIA", "Acesso 170 + gerador 180 • habilita buffs e aprimoramento", Vector3.new(0, 1, -183) },
+	{ "OFICINA", "SMG • aprimoramento até nível 3", Vector3.new(-128, 1, 103) },
+	{ "MERCADO", "Escopeta • buff Corredor", Vector3.new(130, 1, 105) },
+	{ "HOSPITAL", "Posto médico • cura completa por 60 moedas", Vector3.new(128, 1, -165) },
+	{ "CEMITÉRIO E CRIPTA", "Loot gratuito • munição na cripta por 45 moedas", Vector3.new(-170, 1, -177) },
+	{ "AVIÃO / HELIPONTO", "Extração depois da horda 15. Fique na zona verde no final.", Vector3.new(0, 1, 132) },
+}
+
+renderMenu = function()
+	clearList()
+	if currentTab == "Cosmetics" then
+		modalSub.Text = "Seus suprimentos: " .. (player:GetAttribute("Coins") or 0) .. " • cores permanentes, sem dano extra"
+		for _, id in { "Default", "Ember", "Arctic", "Toxic", "Violet" } do
+			local skin = Balance.Skins[id]
+			local owned, selected = player:GetAttribute("Skin_" .. id), player:GetAttribute("Skin") == id
+			card(skin.Name, "Acabamento para todas as suas armas. Comprado com moedas ganhas jogando.",
+				if selected then "EQUIPADO" elseif owned then "EQUIPAR" else "◈ " .. skin.Price .. " • COMPRAR", function()
+					net.Action:FireServer("Skin", id)
+				end, not selected, Color3.fromRGB(table.unpack(skin.Color)))
+		end
+	elseif currentTab == "Robux" then
+		modalSub.Text = "Compras opcionais • preços e confirmação fornecidos pelo Roblox"
+		if #catalog == 0 then card("LOJA INDISPONÍVEL", "Jogue para ganhar moedas, armas e buffs. Tente novamente mais tarde.", "AGUARDE", nil, false) end
+		for _, product in catalog do
+			local ownsPass = product.Kind == "Pass" and player:GetAttribute("Vanguard")
+			local enabled = product.Available and player:GetAttribute("DataPersistent") == true and not ownsPass
+			local caption = if ownsPass then "ADQUIRIDO" elseif not product.Available then "EM BREVE" elseif not player:GetAttribute("DataPersistent") then "SESSÃO TEMPORÁRIA" else product.Price .. " ROBUX"
+			card(product.Name, product.Description, caption, function()
+				local ok = pcall(function()
+					if product.Kind == "Pass" then MarketplaceService:PromptGamePassPurchase(player, product.Id)
+					else MarketplaceService:PromptProductPurchase(player, product.Id) end
+				end)
+				if not ok then toast("Não foi possível abrir a compra. Nenhum benefício foi concedido.") end
+			end, enabled, colors.gold)
+		end
+	elseif currentTab == "Map" then
+		modalSub.Text = "Selecione um destino para marcar no mundo • o norte aponta para a central"
+		for _, place in destinations do card(place[1], place[2], "MARCAR DESTINO", function() setWaypoint(place[3], place[1]) end, true) end
+	else
+		modalSub.Text = "Solo ou equipe de até 6 sobreviventes • 15 hordas + extração"
+		for _, tip in {
+			{ "01 / PREPARE-SE", "Você começa com pistola e 120 moedas. A caixa de resgate é gratuita uma vez por horda: 25% de chance para cada arma." },
+			{ "02 / RESTAURE A ENERGIA", "Abra a central ao norte e ligue o gerador. Desbloqueie buffs, aprimore armas e use a armadilha na praça." },
+			{ "03 / LUTE E EXPLORE", "Atire na cabeça para 1,7× de dano. Loot renova por horda. Aproxime-se e use E, botão Y no controle ou o prompt na tela." },
+			{ "04 / SOBREVIVA EM EQUIPE", "Eliminados voltam na preparação seguinte. Compre 1 resgate por partida na igreja por 90 moedas. Se todos caírem, a equipe tem 8 segundos." },
+			{ "05 / O ÚLTIMO VOO", "Chefes nas hordas 5, 10 e 15. Ao final, chegue ao heliponto antes do cronômetro zerar. Extraídos ganham 300 moedas e uma vitória." },
+			{ "CONTROLES", "PC: mouse atira, R recarrega, Shift corre, 1–4 armas. Controle: RT atira, X recarrega, L3 corre, D-pad direita abre loja. Celular: botões na tela e mira no centro." },
+		} do card(tip[1], tip[2], "SOBREVIVA", nil, false) end
+	end
+end
+
+for i, tab in { { "Cosmetics", "ACABAMENTOS" }, { "Robux", "ROBUX" }, { "Map", "MAPA" }, { "Guide", "COMO JOGAR" } } do
+	button(tabs, tab[2], UDim2.fromOffset(170, 32), UDim2.fromOffset((i - 1) * 181 + 5, 5), function() currentTab = tab[1]; renderMenu() end)
+end
+
+ContextActionService:BindAction("ZumbiMenu", function(_, inputState, input)
+	if inputState == Enum.UserInputState.Begin then
+		shade.Visible, firing = not shade.Visible, false
+		currentTab = if input.KeyCode == Enum.KeyCode.DPadUp then "Map" else "Cosmetics"
+		renderMenu()
+		GuiService.SelectedObject = if shade.Visible then tabs:FindFirstChildOfClass("TextButton") else nil
+	end
+	return Enum.ContextActionResult.Sink
+end, false, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp)
+
+local menuButtons = frame(gui, UDim2.fromOffset(118, 137), UDim2.new(1, -18, 0.5, -75))
+menuButtons.AnchorPoint = Vector2.new(1, 0)
+button(menuButtons, "LOJA  /  B", UDim2.fromOffset(102, 34), UDim2.fromOffset(8, 8), function()
+	shade.Visible, currentTab, firing = not shade.Visible, "Cosmetics", false; renderMenu()
+end)
+button(menuButtons, "MAPA  /  M", UDim2.fromOffset(102, 34), UDim2.fromOffset(8, 51), function()
+	shade.Visible, currentTab, firing = true, "Map", false; renderMenu()
+end)
+button(menuButtons, "CONVIDAR", UDim2.fromOffset(102, 34), UDim2.fromOffset(8, 94), function()
+	local ok, can = pcall(function() return SocialService:CanSendGameInviteAsync(player) end)
+	if ok and can then pcall(function() SocialService:PromptGameInvite(player) end)
+	else toast("Convites ficam disponíveis na experiência publicada.") end
+end)
+
+local deathPanel = frame(gui, UDim2.fromOffset(390, 116), UDim2.new(0.5, 0, 0.75, 0))
+deathPanel.AnchorPoint, deathPanel.Visible = Vector2.new(0.5, 0.5), false
+text(deathPanel, "ELIMINADO • VOLTE NA PRÓXIMA PAUSA", 12, UDim2.fromOffset(12, 8), 24, colors.red)
+local rescueButton = button(deathPanel, "RESGATAR", UDim2.fromOffset(175, 36), UDim2.fromOffset(12, 43), function() net.Action:FireServer("Revive") end)
+local spectateIndex = 0
+button(deathPanel, "ESPECTAR →", UDim2.fromOffset(175, 36), UDim2.fromOffset(202, 43), function() spectateIndex += 1 end)
+local rescueCount = text(deathPanel, "", 10, UDim2.fromOffset(12, 87), 24, colors.sub)
+
+local radar = frame(gui, UDim2.fromOffset(160, 160), UDim2.fromOffset(18, 104), colors.bg)
+stroke(radar)
+text(radar, "N  /  CENTRAL", 9, UDim2.fromOffset(42, 3), 0, colors.teal).Size = UDim2.fromOffset(115, 20)
+local function radarPosition(pos) return UDim2.fromScale(0.5 + pos.X / 560, 0.5 + pos.Z / 560) end
+for _, place in destinations do
+	local dot = frame(radar, UDim2.fromOffset(9, 9), radarPosition(place[3]), colors.line)
+	dot.AnchorPoint = Vector2.new(0.5, 0.5)
+end
+local selfDot = frame(radar, UDim2.fromOffset(7, 7), UDim2.fromScale(0.5, 0.5), colors.teal)
+selfDot.AnchorPoint = Vector2.new(0.5, 0.5)
+local teamDots = {}
+
+local currentHum, healthConnection, deathConnection
+local function characterAdded(character)
+	firing = false
+	if healthConnection then healthConnection:Disconnect() end
+	if deathConnection then deathConnection:Disconnect() end
+	currentHum = character:WaitForChild("Humanoid", 10)
+	if not currentHum then return end
+	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+	workspace.CurrentCamera.CameraSubject = currentHum
+	player.CameraMinZoomDistance, player.CameraMaxZoomDistance = 0.5, 18
+	local function updateHealth()
+		local ratio = math.clamp(currentHum.Health / currentHum.MaxHealth, 0, 1)
+		hpFill.Size = UDim2.fromScale(ratio, 1)
+		hpFill.BackgroundColor3 = if ratio &lt; 0.3 then colors.red else colors.teal
+		healthLabel.Text = "VIDA " .. math.ceil(currentHum.Health) .. " / " .. math.ceil(currentHum.MaxHealth)
+	end
+	healthConnection = currentHum.HealthChanged:Connect(updateHealth)
+	deathConnection = currentHum.Died:Connect(function() firing = false end)
+	updateHealth()
+end
+player.CharacterAdded:Connect(characterAdded)
+if player.Character then task.spawn(characterAdded, player.Character) end
+
+local function currentTool()
+	local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+	return tool and tool:GetAttribute("WeaponId") and tool
+end
+
+local function aimPoint()
+	local camera = workspace.CurrentCamera
+	local mouse = UserInputService:GetMouseLocation()
+	local ray
+	if touch or UserInputService:GetLastInputType().Name:find("Gamepad") then
+		ray = camera:ViewportPointToRay(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+	else ray = camera:ScreenPointToRay(mouse.X, mouse.Y) end
+	local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { player.Character or effects, effects }
+	local hit = workspace:Raycast(ray.Origin, ray.Direction * 500, params)
+	return if hit then hit.Position else ray.Origin + ray.Direction * 500
+end
+
+local function doFire()
+	if shade.Visible or not player:GetAttribute("InRound") or not currentHum or currentHum.Health &lt;= 0 then return end
+	local tool = currentTool()
+	local def = tool and Balance.Weapons[tool:GetAttribute("WeaponId")]
+	if not def or os.clock() &lt; nextShot or (semiautoFired and not def.Automatic) then return end
+	if tool:GetAttribute("Reloading") then return end
+	if (tool:GetAttribute("Ammo") or 0) &lt;= 0 then net.Reload:FireServer(); nextShot = os.clock() + 0.3; return end
+	nextShot, semiautoFired = os.clock() + def.Interval, true
+	net.Fire:FireServer(aimPoint())
+end
+
+local function fireInput(_, inputState)
+	if shade.Visible or UserInputService:GetFocusedTextBox() then return Enum.ContextActionResult.Pass end
+	if not currentTool() then return Enum.ContextActionResult.Pass end
+	if inputState == Enum.UserInputState.Begin then firing, semiautoFired = true, false; doFire()
+	elseif inputState == Enum.UserInputState.End or inputState == Enum.UserInputState.Cancel then firing = false end
+	return Enum.ContextActionResult.Sink
+end
+ContextActionService:BindAction("ZumbiShoot", fireInput, false, Enum.UserInputType.MouseButton1, Enum.KeyCode.ButtonR2)
+ContextActionService:BindAction("ZumbiReload", function(_, inputState)
+	if inputState == Enum.UserInputState.Begin and not shade.Visible and currentTool() then net.Reload:FireServer(); return Enum.ContextActionResult.Sink end
+	return Enum.ContextActionResult.Pass
+end, false, Enum.KeyCode.R, Enum.KeyCode.ButtonX)
+local sprintHeld = false
+ContextActionService:BindAction("ZumbiSprint", function(_, inputState, input)
+	if inputState == Enum.UserInputState.Begin then
+		if input.KeyCode == Enum.KeyCode.ButtonL3 then sprintHeld = not sprintHeld else sprintHeld = true end
+	elseif inputState == Enum.UserInputState.End and input.KeyCode ~= Enum.KeyCode.ButtonL3 then sprintHeld = false end
+	net.Action:FireServer("Sprint", sprintHeld)
+	return Enum.ContextActionResult.Pass
+end, false, Enum.KeyCode.LeftShift, Enum.KeyCode.ButtonL3)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.KeyCode == Enum.KeyCode.B then shade.Visible, currentTab, firing = not shade.Visible, "Cosmetics", false; renderMenu()
+	elseif input.KeyCode == Enum.KeyCode.M then shade.Visible, currentTab, firing = not shade.Visible, "Map", false; renderMenu()
+	elseif input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.ButtonB then shade.Visible = false end
+end)
+UserInputService.WindowFocusReleased:Connect(function()
+	firing, sprintHeld = false, false
+	net.Action:FireServer("Sprint", false)
+end)
+
+local touchButtons = frame(gui, UDim2.fromOffset(160, 140), UDim2.new(1, -30, 1, -190))
+touchButtons.AnchorPoint, touchButtons.BackgroundTransparency, touchButtons.Visible = Vector2.new(1, 1), 1, touch
+local shootButton = button(touchButtons, "ATIRAR", UDim2.fromOffset(74, 74), UDim2.fromOffset(80, 12), nil, colors.line)
+rounded(shootButton, 37)
+shootButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then firing, semiautoFired = true, false; doFire() end
+end)
+shootButton.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch then firing = false end end)
+button(touchButtons, "RECARGA", UDim2.fromOffset(72, 42), UDim2.fromOffset(1, 43), function() net.Reload:FireServer() end)
+button(touchButtons, "CORRER", UDim2.fromOffset(108, 36), UDim2.fromOffset(43, 95), function()
+	sprintHeld = not player:GetAttribute("Sprinting"); net.Action:FireServer("Sprint", sprintHeld)
+end)
+
+local function updateProfile()
+	coinsLabel.Text = "◈ " .. (player:GetAttribute("Coins") or 0)
+	recordLabel.Text = "RECORDE " .. (player:GetAttribute("BestWave") or 0) .. "   /   " .. (player:GetAttribute("Wins") or 0) .. " VITÓRIAS"
+	staminaFill.Size = UDim2.fromScale((player:GetAttribute("Stamina") or 100) / 100, 1)
+	local buffs = {}
+	for _, key in { "Juggernaut", "QuickHands", "Runner" } do if player:GetAttribute(key) then table.insert(buffs, Balance.Perks[key].Name) end end
+	if player:GetAttribute("Vanguard") then table.insert(buffs, "Vanguarda") end
+	if (player:GetAttribute("BoostUntil") or 0) &gt; os.time() then table.insert(buffs, "2× moedas") end
+	buffsLabel.Text = if #buffs &gt; 0 then table.concat(buffs, " • ") else "SEM BUFFS • BUSQUE A ENERGIA"
+	deathPanel.Visible = player:GetAttribute("Eliminated") == true and (state:GetAttribute("Phase") == "Wave" or state:GetAttribute("Phase") == "Extraction")
+	local revives = (player:GetAttribute("Revives") or 0) + (player:GetAttribute("RoundRevives") or 0)
+	rescueButton.Text = "RESGATAR • " .. revives
+	rescueCount.Text = "Resgates de partida: " .. (player:GetAttribute("RoundRevives") or 0) .. "  /  permanentes: " .. (player:GetAttribute("Revives") or 0)
+end
+player.AttributeChanged:Connect(function(key)
+	updateProfile()
+	if shade.Visible and (key == "Coins" or key == "Skin" or key == "DataPersistent" or key == "Vanguard") then renderMenu() end
+end)
+state.AttributeChanged:Connect(updateProfile)
+
+net.Effects.OnClientEvent:Connect(function(kind, payload)
+	if kind == "Toast" then toast(payload.Text, payload.Good)
+	elseif kind == "Announcement" then announce(payload.Text)
+	elseif kind == "Catalog" then catalog = payload; if shade.Visible and currentTab == "Robux" then renderMenu() end
+	elseif kind == "Hit" then
+		hitmarker.Visible, hitmarker.TextColor3 = true, if payload.Head then colors.gold else colors.teal
+		local stamp = os.clock(); hitmarker:SetAttribute("Stamp", stamp)
+		task.delay(0.12, function() if hitmarker:GetAttribute("Stamp") == stamp then hitmarker.Visible = false end end)
+	elseif kind == "Kill" then
+		killLabel.Text = (if payload.Boss then "COMANDANTE ABATIDO" else "INFECTADO ABATIDO") .. "  +" .. payload.Coins .. " ◈"
+		local stamp = os.clock(); killLabel:SetAttribute("Stamp", stamp)
+		task.delay(1.5, function() if killLabel:GetAttribute("Stamp") == stamp then killLabel.Text = "" end end)
+	elseif kind == "Shot" then
+		local camera = workspace.CurrentCamera
+		if (camera.CFrame.Position - payload.Origin).Magnitude &gt; 220 then return end
+		for _, finish in payload.Ends do
+			local length = (finish - payload.Origin).Magnitude
+			if length &gt; 0.1 then
+				local tracer = Instance.new("Part"); tracer.Name, tracer.Anchored, tracer.CanCollide, tracer.CanQuery, tracer.CanTouch = "Tracer", true, false, false, false
+				tracer.Size, tracer.CFrame = Vector3.new(0.055, 0.055, length), CFrame.lookAt(payload.Origin:Lerp(finish, 0.5), finish)
+				tracer.Material, tracer.Color, tracer.Parent = Enum.Material.Neon, colors.gold, effects
+				Debris:AddItem(tracer, 0.065)
+			end
+		end
+		if payload.UserId == player.UserId then
+			local tool = currentTool()
+			local handle = tool and tool:FindFirstChild("Handle")
+			if handle then
+				local flash = Instance.new("PointLight"); flash.Color, flash.Brightness, flash.Range, flash.Parent = colors.gold, 2, 8, handle
+				Debris:AddItem(flash, 0.06)
+			end
+		end
+	elseif kind == "Waypoint" then setWaypoint(payload.Position, "EXTRAÇÃO")
+	elseif kind == "Trap" then
+		local ring = Instance.new("Part"); ring.Name, ring.Anchored, ring.CanCollide, ring.CanQuery, ring.CanTouch = "Descarga", true, false, false, false
+		ring.Shape, ring.Size, ring.CFrame = Enum.PartType.Cylinder, Vector3.new(0.2, 50, 50), CFrame.new(payload.Position) * CFrame.Angles(0, 0, math.pi / 2)
+		ring.Material, ring.Color, ring.Transparency, ring.Parent = Enum.Material.Neon, colors.teal, 0.8, effects
+		Debris:AddItem(ring, payload.Duration)
+	end
+end)
+
+local phaseNames = { Waiting = "AGUARDANDO EQUIPE", Preparation = "PREPARAÇÃO", Wave = "HORDA", Extraction = "EXTRAÇÃO", Victory = "RESGATE CONCLUÍDO", GameOver = "A CIDADE CAIU" }
+local renderAccumulator = 0
+local lastRound = -1
+RunService.RenderStepped:Connect(function(dt)
+	local camera = workspace.CurrentCamera
+	if not camera then return end
+	local viewport = camera.ViewportSize
+	local compact = viewport.X &lt; 1000 or viewport.Y &lt; 600
+	modalScale.Scale = math.min(1, (viewport.X - 22) / 780, (viewport.Y - 32) / 530)
+	brand.Visible, subtitle.Visible, radar.Visible = not compact, not compact, not compact
+	local hudScale = if compact then math.clamp(viewport.X / 1000, 0.62, 0.85) else 1
+	for _, panel in { wavePanel, wallet, survival, gunPanel, menuButtons, deathPanel, toastHolder } do
+		local scale = panel:FindFirstChildOfClass("UIScale") or Instance.new("UIScale", panel)
+		scale.Scale = hudScale
+	end
+	banner.Size = UDim2.fromOffset(math.min(660, viewport.X - 32), 43)
+	banner.TextSize = if compact then 12 else 16
+	objective.Visible, phaseHint.Visible = not compact, not compact
+	wavePanel.Position = if compact then UDim2.new(0, 12, 0, 8) else UDim2.new(0.5, 0, 0, 12)
+	wavePanel.AnchorPoint = if compact then Vector2.zero else Vector2.new(0.5, 0)
+	local mouse = UserInputService:GetMouseLocation()
+	local inset = GuiService:GetGuiInset()
+	local centered = touch or UserInputService:GetLastInputType().Name:find("Gamepad")
+	crosshair.Position = if centered then UDim2.fromOffset(viewport.X / 2, viewport.Y / 2 - inset.Y) else UDim2.fromOffset(mouse.X - inset.X, mouse.Y - inset.Y)
+	crosshair.Visible = currentTool() ~= nil and player:GetAttribute("InRound") == true and not shade.Visible
+	if firing then doFire() end
+	local targetFov = if player:GetAttribute("Sprinting") then 78 else 70
+	camera.FieldOfView += (targetFov - camera.FieldOfView) * math.min(dt * 7, 1)
+	renderAccumulator += dt
+	if renderAccumulator &lt; 0.1 then return end
+	renderAccumulator = 0
+	local round = state:GetAttribute("Round") or 0
+	if round ~= lastRound then
+		lastRound = round
+		if marker then marker:Destroy(); marker = nil; markerPos = nil end
+	end
+	local phase = state:GetAttribute("Phase") or "Waiting"
+	local wave = state:GetAttribute("Wave") or 0
+	local seconds = math.max(0, math.ceil((state:GetAttribute("EndsAt") or 0) - workspace:GetServerTimeNow()))
+	local wipe = state:GetAttribute("WipeAt") or 0
+	waveLabel.Text = (phaseNames[phase] or phase) .. (if phase == "Wave" then "  " .. wave .. "/15" else "")
+	waveDetail.Text = if phase == "Wave" then ((state:GetAttribute("Enemies") or 0) + (state:GetAttribute("Remaining") or 0)) .. " infectados • " .. (state:GetAttribute("Living") or 0) .. " sobreviventes" elseif phase == "Preparation" then "Explore • encontre loot • compre melhorias" elseif phase == "Extraction" then "Fique dentro da zona verde quando zerar" elseif phase == "Waiting" then "Carregando dados dos sobreviventes…" else "Recorde " .. (player:GetAttribute("BestWave") or 0) .. " • próxima tentativa em breve"
+	timeLabel.Text = if wipe &gt; 0 then "! " .. math.max(0, math.ceil(wipe - workspace:GetServerTimeNow())) elseif phase == "Wave" or phase == "Waiting" then "" else tostring(seconds) .. "s"
+	progressFill.Size = UDim2.fromScale(math.clamp(wave / 15, 0.03, 1), 1)
+	phaseHint.Text = if state:GetAttribute("Power") then "ENERGIA ATIVA  •  BUFFS DISPONÍVEIS" else "OBJETIVO: LIGAR A CENTRAL DE ENERGIA"
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if root then
+		selfDot.Position = radarPosition(root.Position)
+		if markerPos then objective.Text = "▼ DESTINO  •  " .. math.floor((root.Position - markerPos).Magnitude) .. " m"
+		else objective.Text = "ABATES " .. (player:GetAttribute("RoundKills") or 0) .. "  /  " .. (if phase == "Extraction" then "ALCANCE O HELIPONTO" else "SOBREVIVA ÀS 15 HORDAS") end
+	end
+	local team = {}
+	for _, other in Players:GetPlayers() do
+		if other ~= player and other:GetAttribute("InRound") and other.Character then
+			local r = other.Character:FindFirstChild("HumanoidRootPart")
+			if r then
+				table.insert(team, other)
+				local dot = teamDots[other] or frame(radar, UDim2.fromOffset(5, 5), radarPosition(r.Position), colors.gold)
+				dot.Position, dot.AnchorPoint = radarPosition(r.Position), Vector2.new(0.5, 0.5)
+				teamDots[other] = dot
+			end
+		end
+	end
+	for other, dot in teamDots do if not table.find(team, other) then dot:Destroy(); teamDots[other] = nil end end
+	if deathPanel.Visible and #team &gt; 0 then
+		local target = team[spectateIndex % #team + 1]
+		local hum = target.Character and target.Character:FindFirstChildOfClass("Humanoid")
+		if hum then camera.CameraSubject = hum end
+	end
+	local tool = currentTool()
+	if tool then
+		gunName.Text = string.upper(tool.Name)
+		ammoLabel.Text = (tool:GetAttribute("Ammo") or 0) .. " / " .. (tool:GetAttribute("Reserve") or 0)
+		ammoLabel.TextColor3 = if (tool:GetAttribute("Ammo") or 0) &lt;= 3 then colors.gold else colors.text
+		reloadLabel.Text = if tool:GetAttribute("Reloading") then "RECARREGANDO…" elseif touch then "TOQUE EM RECARGA" else "R / X RECARREGAR  •  1–4 ARMAS"
+	else gunName.Text, ammoLabel.Text = "EQUIPE SUA ARMA", "— / —" end
+end)
+
+net.Action:FireServer("Ready")
+updateProfile()
+task.delay(5, function()
+	if not player:GetAttribute("BestWave") or player:GetAttribute("BestWave") == 0 then
+		currentTab = "Guide"; shade.Visible = true; firing = false; renderMenu()
+	end
+	if player:GetAttribute("DataReady") and not player:GetAttribute("DataPersistent") then toast("Sessão de teste: progresso temporário, compras indisponíveis.") end
+end)
+</ProtectedString>
+          <bool name="Disabled">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Lighting" referent="RBX20">
+    <Properties>
+      <string name="Name">Lighting</string>
+    </Properties>
+  </Item>
+  <Item class="SoundService" referent="RBX21">
+    <Properties>
+      <string name="Name">SoundService</string>
+    </Properties>
+  </Item>
+</roblox>

@@ -1,6 +1,6 @@
 # ZUMBI — Último Voo
 
-> **Downloads suspensos — análise de segurança pendente.** Foi relatada uma detecção do Windows Defender, `Trojan:Script/Ulthar.A!ml`, no pacote `ZUMBI-ABRIR-NO-STUDIO.zip`. Os arquivos de distribuição foram retirados da versão atual. Não restaure o arquivo da quarentena nem desative a proteção. A causa ainda não foi determinada; não há confirmação de falso positivo. Consulte [o registro da investigação](docs/SEGURANCA.md). As instruções de execução abaixo documentam o projeto e não constituem liberação de segurança.
+> **Pacotes originais retirados — análise de segurança pendente.** Foi relatada uma detecção do Windows Defender, `Trojan:Script/Ulthar.A!ml`, no pacote `ZUMBI-ABRIR-NO-STUDIO.zip`. A pedido do usuário, a [candidata revisada está disponível para inspeção](review/LEIA-ME.md), **sem validação antivírus**. Não há confirmação de que o alerta foi resolvido nem de falso positivo. Não restaure arquivos da quarentena nem desative a proteção. Consulte [o registro da investigação](docs/SEGURANCA.md). As instruções de execução abaixo não constituem liberação de segurança.
 
 Jogo de sobrevivência cooperativa para Roblox, solo ou com até 6 jogadores. Um avião cai na cidade de Aurora; a equipe explora os prédios, restaura a energia, enfrenta 15 hordas e tenta embarcar no último resgate.
 

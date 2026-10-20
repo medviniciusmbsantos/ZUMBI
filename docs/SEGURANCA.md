@@ -1,6 +1,6 @@
 # Investigação do alerta do Windows Defender
 
-**Status: pendente; distribuição suspensa.**
+**Status: pendente; pacotes originais retirados; candidata sem aprovação antivírus disponível para revisão a pedido do usuário.**
 
 Foi relatada a detecção `Trojan:Script/Ulthar.A!ml` no download de `ZUMBI-ABRIR-NO-STUDIO.zip` hospedado neste repositório. O texto informado pelo Defender descreve execução de comandos por um invasor. Esse é o texto da detecção, não evidência independente de que comandos tenham sido executados no computador do usuário.
 
@@ -11,7 +11,7 @@ Não foi possível reproduzir o alerta com Windows Defender neste ambiente Linux
 - Cópias dos três arquivos originais foram preservadas fora do checkout para investigação, sem execução.
 - Os arquivos de distribuição e seus links recomendados foram retirados da versão atual do repositório.
 - O histórico Git não foi reescrito: commits anteriores e caches podem conservar cópias. Não as utilize como alternativa ao arquivo bloqueado.
-- Nenhum arquivo foi renomeado ou reempacotado para contornar a detecção, e nenhum substituto foi liberado após o alerta.
+- Nenhum arquivo foi renomeado ou reempacotado para contornar a detecção. Após a revisão descrita abaixo, uma candidata foi disponibilizada na pasta `review`, a pedido do usuário, sem aprovação antivírus e sem alegação de resolução da detecção.
 
 | Arquivo original | Bytes | SHA-256 |
 | --- | ---: | --- |
@@ -37,10 +37,10 @@ O gerador e o empacotador foram reescritos para aceitar apenas a estrutura supor
 
 A leitura dos perfis também foi reformulada em `src/shared/Profile.luau`: saldos e contadores são normalizados, concessões inválidas não são aplicadas e uma sessão com prazo ausente não causa mais erro de carregamento. Isso corrige problemas concretos de robustez. Não foi identificada ligação entre esses problemas e a detecção do Defender; não se afirma que sejam sua causa.
 
-Passaram 23 testes Python, a compilação dos 12 scripts/módulos Luau e 215 verificações Luau. O jogo, mapa, armas e regras de monetização foram preservados. A versão candidata não foi executada no Roblox nem examinada pelo Defender. Os arquivos de distribuição permanecem suspensos; os fontes revisados e o manifesto de revisão ficam disponíveis para inspeção.
+Passaram 23 testes Python, a compilação dos 12 scripts/módulos Luau e 215 verificações Luau. O jogo, mapa, armas e regras de monetização foram preservados. A versão candidata não foi executada no Roblox nem examinada pelo Defender. A pasta `review` contém a candidata e o manifesto para inspeção, disponibilizados a pedido do usuário. Isso não equivale a aprovação para execução nem a conclusão da investigação.
 
 Mantenha a quarentena e a proteção do Windows ativas. Não é necessário restaurar o arquivo para informar o nome da detecção, a versão das definições do Defender ou os detalhes do Histórico de proteção. Não compartilhe caminhos com dados pessoais.
 
 A classificação precisa de análise adicional, preferencialmente pelo Microsoft Security Intelligence, por meio do portal oficial de submissão de arquivos: https://www.microsoft.com/en-us/wdsi/filesubmission . Nenhuma amostra foi enviada a terceiros a partir deste ambiente. O acesso ao portal e à documentação da Microsoft não pôde ser concluído pela rede deste ambiente.
 
-Antes de qualquer nova distribuição, é necessário esclarecer a detecção, revisar as conclusões e validar o artefato correspondente. Sucesso de compilação, testes de jogo ou mudança de extensão não substituem essa validação.
+Para considerar uma versão liberada como segura, é necessário esclarecer a detecção, revisar as conclusões e validar o artefato correspondente. Sucesso de compilação, testes de jogo ou mudança de extensão não substituem essa validação.
