@@ -1,0 +1,17 @@
+{
+  "name": "ZUMBI - Ultimo Voo",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "ZumbiShared": { "$path": "src/shared" }
+    },
+    "ServerScriptService": {
+      "ZumbiServer": { "$path": "src/server" }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "ZumbiClient": { "$path": "src/client/main.client.luau" }
+      }
+    }
+  }
+}
